@@ -220,8 +220,8 @@
 @media (max-width: 768px) {
   .shell-main {
     margin-left: 0;
-    /* space for bottom tab bar */
-    padding-bottom: 68px;
+    /* space for bottom tab bar + elevated center FAB */
+    padding-bottom: 80px;
   }
 }
 
@@ -264,11 +264,12 @@
   left: 0;
   right: 0;
   z-index: 100;
-  height: 64px;
+  height: 68px;
   background: #ffffff;
   border-top: 1px solid var(--border-card);
-  padding: 0 8px;
+  padding: 0 4px;
   padding-bottom: env(safe-area-inset-bottom, 0px);
+  box-shadow: 0 -4px 24px rgba(0, 0, 0, 0.06);
 }
 
 @media (max-width: 768px) {
@@ -285,10 +286,10 @@
   align-items: center;
   justify-content: center;
   gap: 3px;
-  padding: 8px 16px;
+  padding: 8px 10px;
   border-radius: 12px;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all 0.18s ease;
   background: none;
   border: none;
   font-family: inherit;
@@ -300,24 +301,90 @@
   width: 22px;
   height: 22px;
   color: var(--text-muted);
-  transition: color 0.15s ease;
+  transition: color 0.18s ease;
 }
 
 .tab-item-label {
   font-size: 10px;
   font-weight: 600;
   color: var(--text-muted);
-  transition: color 0.15s ease;
+  transition: color 0.18s ease;
   white-space: nowrap;
 }
 
 .tab-item.active .tab-item-icon,
 .tab-item.active .tab-item-label {
-  color: var(--text-primary);
+  color: #111111;
 }
 
 .tab-item.active {
-  background: var(--bg-tag);
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.tab-item:not(.active):hover .tab-item-icon,
+.tab-item:not(.active):hover .tab-item-label {
+  color: var(--text-secondary);
+}
+
+/* ─── Center FAB (Coach) ─── */
+.tab-center-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 4px;
+  padding-top: 0;
+  position: relative;
+  /* push the FAB above the bar */
+  margin-top: -22px;
+}
+
+.tab-center-fab {
+  width: 54px;
+  height: 54px;
+  border-radius: 50%;
+  background: #111111;
+  color: #ffffff;
+  border: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.22),
+    0 1px 4px rgba(0, 0, 0, 0.12);
+  transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  /* Border ring so it stands proud of the white bar */
+  outline: 3px solid #ffffff;
+  outline-offset: 0px;
+  flex-shrink: 0;
+}
+
+.tab-center-fab:hover {
+  transform: scale(1.08) translateY(-2px);
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.28),
+    0 2px 8px rgba(0, 0, 0, 0.14);
+}
+
+.tab-center-fab:active {
+  transform: scale(0.95);
+}
+
+.tab-center-fab--active {
+  background: #333333;
+  box-shadow:
+    0 6px 20px rgba(0, 0, 0, 0.3),
+    0 1px 4px rgba(0, 0, 0, 0.12);
+}
+
+.tab-center-label {
+  font-size: 10px;
+  font-weight: 600;
+  color: #111111;
+  white-space: nowrap;
+  line-height: 1;
 }
 
 /* ─── Dashboard grid ─── */

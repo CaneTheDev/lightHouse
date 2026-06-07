@@ -9,9 +9,9 @@ export const Sidebar: React.FC = () => {
 
   const navItems = [
     { id: 'dashboard',     label: 'Dashboard',       icon: <LayoutDashboard size={18} /> },
-    { id: 'discovery',     label: 'Discovery',        icon: <Compass size={18} /> },
+    { id: 'leads',         label: 'Job Leads',        icon: <FileText size={18} /> },
+    { id: 'discovery',     label: 'Discover',         icon: <Compass size={18} /> },
     { id: 'coach',         label: 'AI Coach',         icon: <Bot size={18} /> },
-    { id: 'leads',         label: 'Leads',            icon: <FileText size={18} /> },
     { id: 'profile',       label: 'Profile Settings', icon: <Settings size={18} /> },
   ] as const;
 

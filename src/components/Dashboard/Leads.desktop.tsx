@@ -360,7 +360,7 @@ export const LeadsDesktop: React.FC = () => {
       }}>
         <div>
           <h1 className="hero-heading" style={{ fontSize: '28px', marginBottom: '6px', letterSpacing: '-0.5px' }}>
-            Leads
+            Job Leads
           </h1>
           <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0 }}>
             Find appropriate jobs based on your qualifications and manage your outreach.
