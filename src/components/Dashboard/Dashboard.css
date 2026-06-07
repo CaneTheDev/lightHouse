@@ -1,0 +1,13 @@
+/* Custom styling for Desktop Dashboard */
+
+.suggestion-pill-hover:hover {
+  background: var(--bg-btn-dark) !important;
+  color: #ffffff !important;
+  border-color: var(--bg-btn-dark) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.panel-slide-in {
+  box-shadow: -10px 0 30px rgba(0, 0, 0, 0.05);
+}
