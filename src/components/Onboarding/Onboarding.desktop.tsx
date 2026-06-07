@@ -73,7 +73,7 @@ export const OnboardingDesktop: React.FC = () => {
       if (res.ok) {
         const data = await res.json();
         // Capitalize words for professional look
-        return data.slice(0, 5).map((item: any) => 
+        return data.slice(0, 3).map((item: any) => 
           item.word.split(' ').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
         );
       }
@@ -91,7 +91,7 @@ export const OnboardingDesktop: React.FC = () => {
     }
     const filtered = COUNTRIES.filter(c => 
       c.toLowerCase().includes(val.toLowerCase())
-    ).slice(0, 5);
+    ).slice(0, 3);
     setLocationSuggestions(filtered);
   };
 
@@ -171,7 +171,7 @@ export const OnboardingDesktop: React.FC = () => {
     borderRadius: '10px',
     boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
     zIndex: 100,
-    maxHeight: '180px',
+    maxHeight: '120px',
     overflowY: 'auto',
     padding: '4px 0',
     marginTop: '4px'
@@ -232,7 +232,7 @@ export const OnboardingDesktop: React.FC = () => {
         />
       </div>
 
-      <div ref={locationRef} style={{ position: 'relative' }}>
+      <div ref={locationRef} style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
         <div className="label">
           <MapPin size={13} /> Location / Country *
         </div>
@@ -286,7 +286,7 @@ export const OnboardingDesktop: React.FC = () => {
         </div>
 
         {/* Field / Major */}
-        <div ref={majorRef} style={{ position: 'relative' }}>
+        <div ref={majorRef} style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
           <div className="label">
             <GraduationCap size={13} /> Field of Study / Major *
           </div>
@@ -328,7 +328,7 @@ export const OnboardingDesktop: React.FC = () => {
       )}
 
       {/* Skills */}
-      <div ref={skillRef} style={{ position: 'relative' }}>
+      <div ref={skillRef} style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
         <div className="label">Skills & Technologies</div>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <input
@@ -372,7 +372,7 @@ export const OnboardingDesktop: React.FC = () => {
       </div>
 
       {/* Interests */}
-      <div ref={interestRef} style={{ position: 'relative' }}>
+      <div ref={interestRef} style={{ position: 'relative', zIndex: 1, isolation: 'isolate' }}>
         <div className="label">Interests & Target Fields</div>
         <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
           <input

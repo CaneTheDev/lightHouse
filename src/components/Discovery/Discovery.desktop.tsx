@@ -43,6 +43,7 @@ export const DiscoveryDesktop: React.FC = () => {
   const [search, setSearch] = useState('');
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [networkTab, setNetworkTab] = useState<'mentors' | 'communities'>('mentors');
+  const [detailTab, setDetailTab] = useState<'about' | 'strategy' | 'connect'>('about');
   const [checkedRoadmap, setCheckedRoadmap] = useState<Record<number, boolean>>({});
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
   const [savedStates, setSavedStates] = useState<Record<string, boolean>>({});
@@ -66,6 +67,7 @@ export const DiscoveryDesktop: React.FC = () => {
     setCheckedRoadmap({});
     setAccordionOpen(false);
     setNetworkTab('mentors');
+    setDetailTab('about');
   }, [oppId]);
 
   const handleAnalyze = async (opp: Opportunity, forceReanalyze = false) => {
@@ -225,187 +227,304 @@ export const DiscoveryDesktop: React.FC = () => {
           </div>
         </div>
 
-        <div className="discovery-split">
-          {/* LEFT: Match Strategy */}
-          <div className="discovery-split-left">
-            <div className="card" style={{ padding: '24px' }}>
-              <div className="score-row">
-                <div style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
-                  <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="50" cy="50" r={radius} className="score-ring-track" fill="none" strokeWidth="8" />
-                    <circle cx="50" cy="50" r={radius} className={`score-ring-fill ${scoreStrokeClass}`}
-                      fill="none" strokeWidth="8" strokeDasharray={circumference}
-                      strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{animatedScore}%</span>
-                    <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fit</span>
+        {/* Tab bar */}
+        <div style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: '12px', padding: '4px', marginBottom: '20px', flexShrink: 0, gap: '2px' }}>
+          <button onClick={() => setDetailTab('about')} style={{
+            flex: 1, padding: '9px 14px', borderRadius: '9px', border: 'none',
+            background: detailTab === 'about' ? 'var(--bg-card)' : 'transparent',
+            color: detailTab === 'about' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: '13px', fontWeight: 700,
+            boxShadow: detailTab === 'about' ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',
+            cursor: 'pointer', transition: 'all 0.15s ease'
+          }}>About</button>
+          <button onClick={() => setDetailTab('strategy')} style={{
+            flex: 1, padding: '9px 14px', borderRadius: '9px', border: 'none',
+            background: detailTab === 'strategy' ? 'var(--bg-card)' : 'transparent',
+            color: detailTab === 'strategy' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: '13px', fontWeight: 700,
+            boxShadow: detailTab === 'strategy' ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',
+            cursor: 'pointer', transition: 'all 0.15s ease'
+          }}>Match Strategy</button>
+          <button onClick={() => setDetailTab('connect')} style={{
+            flex: 1, padding: '9px 14px', borderRadius: '9px', border: 'none',
+            background: detailTab === 'connect' ? 'var(--bg-card)' : 'transparent',
+            color: detailTab === 'connect' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: '13px', fontWeight: 700,
+            boxShadow: detailTab === 'connect' ? '0 1px 4px rgba(0,0,0,0.07)' : 'none',
+            cursor: 'pointer', transition: 'all 0.15s ease'
+          }}>Connect Network</button>
+        </div>
+
+        {/* ABOUT TAB */}
+        {detailTab === 'about' && (() => {
+          // Graceful fallback for legacy cached opportunities without separate fields
+          const rawReqs = selectedOpportunity.requirements || '';
+          const splitIdx = rawReqs.indexOf('\n\nAvailability:');
+          const overview = selectedOpportunity.description
+            || (splitIdx !== -1 ? rawReqs.slice(0, splitIdx).trim() : rawReqs.trim());
+          const requirementsText = selectedOpportunity.availability
+            || (splitIdx !== -1 ? rawReqs.slice(splitIdx + 2).trim() : '');
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+              {/* Position Overview */}
+              <div className="card" style={{ padding: '24px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                  <div style={{
+                    width: '30px', height: '30px', borderRadius: '8px',
+                    background: 'linear-gradient(135deg, #3b82f615, #6366f115)',
+                    border: '1px solid var(--border-card)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  }}>
+                    <Clipboard size={14} style={{ color: '#3b82f6' }} />
                   </div>
-                </div>
-                <div style={{ flex: 1 }}>
-                  <h3 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 0, marginBottom: '6px' }}>
-                    Eligibility Reasoning
+                  <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Position Overview
                   </h3>
-                  <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
-                    {result.eligibility_reasoning}
+                </div>
+                <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {overview || 'No description available for this opportunity.'}
+                </p>
+              </div>
+
+              {/* Requirements */}
+              {requirementsText && (
+                <div className="card" style={{ padding: '24px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '14px' }}>
+                    <div style={{
+                      width: '30px', height: '30px', borderRadius: '8px',
+                      background: 'linear-gradient(135deg, #10b98115, #059e6a15)',
+                      border: '1px solid var(--border-card)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                    }}>
+                      <CheckCircle2 size={14} style={{ color: '#10b981' }} />
+                    </div>
+                    <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Requirements & Availability
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.7, margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {requirementsText}
                   </p>
                 </div>
-              </div>
-            </div>
+              )}
 
-            <div className="card" style={{ padding: '24px' }}>
-              <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '14px' }}>
-                Application Roadmap
-              </h3>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                {result.application_tips.map((tip, i) => {
-                  const checked = !!checkedRoadmap[i];
-                  return (
-                    <div key={i} id={`roadmap-item-${i}`} onClick={() => toggleRoadmap(i)}
-                      className={`checklist-item ${checked ? 'done' : ''}`}>
-                      <div style={{ flexShrink: 0, marginTop: '1px', color: checked ? '#22c55e' : 'var(--text-muted)' }}>
-                        {checked ? <CheckSquare size={15} /> : <Square size={15} />}
-                      </div>
-                      <span style={{ fontSize: '13px', color: checked ? 'var(--text-muted)' : 'var(--text-primary)',
-                        textDecoration: checked ? 'line-through' : 'none', lineHeight: 1.55 }}>
-                        {tip}
-                      </span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-
-            {result.reasoning_details && (
-              <div className="card" style={{ padding: '20px 24px' }}>
-                <button id="reasoning-accordion-toggle" onClick={() => setAccordionOpen(o => !o)}
-                  style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                    background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
-                  <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                    <Terminal size={14} /> View AI Pipeline Agent Reasoning
-                  </span>
-                  {accordionOpen ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
-                </button>
-                {accordionOpen && (
-                  <div style={{ marginTop: '16px', padding: '14px', background: 'var(--bg-input)', borderRadius: '10px',
-                    fontFamily: 'ui-monospace, monospace', fontSize: '11.5px', color: 'var(--text-secondary)',
-                    maxHeight: '220px', overflowY: 'auto', lineHeight: 1.7, border: '1px solid var(--border-card)' }}>
-                    {result.reasoning_details.eligibility && (
-                      <div style={{ marginBottom: '12px' }}>
-                        <p style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>// Branch A: Eligibility Analysis</p>
-                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', paddingLeft: '8px', borderLeft: '2px solid var(--border-input)' }}>
-                          {typeof result.reasoning_details.eligibility === 'string' ? result.reasoning_details.eligibility : JSON.stringify(result.reasoning_details.eligibility, null, 2)}
-                        </p>
-                      </div>
-                    )}
-                    {result.reasoning_details.networking && (
-                      <div>
-                        <p style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>// Branch B: Context Agent & Web Search</p>
-                        <p style={{ margin: 0, whiteSpace: 'pre-wrap', paddingLeft: '8px', borderLeft: '2px solid var(--border-input)' }}>
-                          {typeof result.reasoning_details.networking === 'string' ? result.reasoning_details.networking : JSON.stringify(result.reasoning_details.networking, null, 2)}
-                        </p>
-                      </div>
-                    )}
+              {/* Quick Action */}
+              <div className="card" style={{ padding: '18px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '16px', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                    {selectedOpportunity.organization}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                    <span className={`badge ${selectedOpportunity.type ? `badge-${selectedOpportunity.type}` : 'badge-default'}`}
+                      style={{ fontSize: '11px', padding: '3px 10px' }}>
+                      {selectedOpportunity.type || 'opportunity'}
+                    </span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>·</span>
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      {result.success_probability} match probability
+                    </span>
                   </div>
+                </div>
+                {selectedOpportunity.url && (
+                  <a href={selectedOpportunity.url} target="_blank" rel="noopener noreferrer"
+                    className="btn-primary"
+                    style={{ padding: '9px 20px', fontSize: '13px', display: 'inline-flex', alignItems: 'center', gap: '6px', borderRadius: '10px', textDecoration: 'none', fontWeight: 600 }}>
+                    <ExternalLink size={13} /> Apply Now
+                  </a>
                 )}
               </div>
-            )}
-          </div>
+            </div>
+          );
+        })()}
 
-          {/* RIGHT: Networking Suite */}
-          <div className="discovery-split-right">
-            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
-              <div style={{ flexShrink: 0 }}>
-                <p style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>
-                  Connect Network
-                </p>
-                <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px', letterSpacing: '-0.3px' }}>
-                  Networking Suite
-                </h2>
-                <div className="sub-tab-nav">
-                  <button className={`sub-tab-btn ${networkTab === 'mentors' ? 'active' : ''}`} onClick={() => setNetworkTab('mentors')}>Mentors</button>
-                  <button className={`sub-tab-btn ${networkTab === 'communities' ? 'active' : ''}`} onClick={() => setNetworkTab('communities')}>Communities</button>
+        {/* MATCH STRATEGY TAB */}
+        {detailTab === 'strategy' && (
+          <div className="discovery-split">
+            {/* LEFT: Match Strategy */}
+            <div className="discovery-split-left">
+              <div className="card" style={{ padding: '24px' }}>
+                <div className="score-row">
+                  <div style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
+                    <svg width="100" height="100" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="50" cy="50" r={radius} className="score-ring-track" fill="none" strokeWidth="8" />
+                      <circle cx="50" cy="50" r={radius} className={`score-ring-fill ${scoreStrokeClass}`}
+                        fill="none" strokeWidth="8" strokeDasharray={circumference}
+                        strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '22px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{animatedScore}%</span>
+                      <span style={{ fontSize: '9px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Fit</span>
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <h3 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginTop: 0, marginBottom: '6px' }}>
+                      Eligibility Reasoning
+                    </h3>
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0 }}>
+                      {result.eligibility_reasoning}
+                    </p>
+                  </div>
                 </div>
               </div>
 
-              {networkTab === 'mentors' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
-                  {result.suggested_contacts.length > 0 ? result.suggested_contacts.map((contact, i) => {
-                    const copyId = `contact-${i}`;
-                    const isCopied = !!copiedStates[copyId];
-                    const isSaved  = !!savedStates[`s-${i}`];
-                    return (
-                      <div key={i} className="contact-card">
-                        <div className="contact-card-header">
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                            <div className="contact-avatar"><UserCheck size={16} /></div>
-                            <div>
-                              <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{contact.name}</span>
-                                {contact.source === 'github_api' ? (
-                                  <span style={{ fontSize: '10px', fontWeight: 600, background: 'var(--bg-tag)', border: '1px solid var(--border-card)', color: 'var(--text-secondary)', padding: '1px 6px', borderRadius: '4px' }}>GitHub</span>
-                                ) : contact.source === 'mock' ? (
-                                  <span style={{ fontSize: '10px', fontWeight: 600, background: '#fef9c3', color: '#854d0e', padding: '1px 6px', borderRadius: '4px' }}>Sample</span>
-                                ) : (
-                                  <span style={{ fontSize: '10px', fontWeight: 600, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px' }}>LinkedIn</span>
-                                )}
-                              </div>
-                              <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
-                                {contact.snippet}
-                              </p>
-                            </div>
-                          </div>
-                          <a href={contact.profile_url} target="_blank" rel="noopener noreferrer"
-                            style={{ flexShrink: 0, padding: '6px', borderRadius: '8px', border: '1px solid var(--border-card)', color: 'var(--text-muted)', display: 'flex', background: 'var(--bg-card)' }}>
-                            <ExternalLink size={13} />
-                          </a>
+              {result.reasoning_details && (
+                <div className="card" style={{ padding: '20px 24px' }}>
+                  <button id="reasoning-accordion-toggle" onClick={() => setAccordionOpen(o => !o)}
+                    style={{ width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                      background: 'none', border: 'none', cursor: 'pointer', padding: 0, fontFamily: 'inherit' }}>
+                    <span style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '13.5px', fontWeight: 600, color: 'var(--text-secondary)' }}>
+                      <Terminal size={14} /> View AI Pipeline Agent Reasoning
+                    </span>
+                    {accordionOpen ? <ChevronUp size={14} color="var(--text-muted)" /> : <ChevronDown size={14} color="var(--text-muted)" />}
+                  </button>
+                  {accordionOpen && (
+                    <div style={{ marginTop: '16px', padding: '14px', background: 'var(--bg-input)', borderRadius: '10px',
+                      fontFamily: 'ui-monospace, monospace', fontSize: '11.5px', color: 'var(--text-secondary)',
+                      maxHeight: '220px', overflowY: 'auto', lineHeight: 1.7, border: '1px solid var(--border-card)' }}>
+                      {result.reasoning_details.eligibility && (
+                        <div style={{ marginBottom: '12px' }}>
+                          <p style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>// Branch A: Eligibility Analysis</p>
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', paddingLeft: '8px', borderLeft: '2px solid var(--border-input)' }}>
+                            {typeof result.reasoning_details.eligibility === 'string' ? result.reasoning_details.eligibility : JSON.stringify(result.reasoning_details.eligibility, null, 2)}
+                          </p>
                         </div>
-                        <div className="contact-message-preview">{contact.suggested_message}</div>
-                        <div className="contact-actions">
-                          <button id={`copy-message-${i}`} onClick={() => handleCopy(contact.suggested_message, copyId)}
-                            className={isCopied ? 'btn-ghost' : 'btn-primary'}
-                            style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '12px', gap: '6px' }}>
-                            {isCopied ? <><Check size={12} /> Copied!</> : <><Clipboard size={12} /> Copy Message</>}
-                          </button>
-                          <button id={`save-draft-${i}`} onClick={() => handleSave(contact, i)} className="btn-ghost"
-                            style={{ padding: '8px 12px', fontSize: '12px', gap: '5px', display: 'flex', alignItems: 'center' }}
-                            title={isSaved ? 'Saved to Library' : 'Save to Library & Drafts'}>
-                            {isSaved ? <BookmarkCheck size={13} color="#16a34a" /> : <Bookmark size={13} />}
-                          </button>
+                      )}
+                      {result.reasoning_details.networking && (
+                        <div>
+                          <p style={{ fontWeight: 700, color: 'var(--text-primary)', margin: '0 0 4px' }}>// Branch B: Context Agent & Web Search</p>
+                          <p style={{ margin: 0, whiteSpace: 'pre-wrap', paddingLeft: '8px', borderLeft: '2px solid var(--border-input)' }}>
+                            {typeof result.reasoning_details.networking === 'string' ? result.reasoning_details.networking : JSON.stringify(result.reasoning_details.networking, null, 2)}
+                          </p>
                         </div>
-                      </div>
-                    );
-                  }) : (
-                    <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
-                      No networking contacts generated.
+                      )}
                     </div>
                   )}
                 </div>
               )}
+            </div>
 
-              {networkTab === 'communities' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
-                  {[
-                    { name: 'Tech Career Africa', platform: 'Telegram', url: 'https://t.me/techcareerafrica', desc: 'Opportunities, referrals, and career tips for African tech professionals.' },
-                    { name: `${selectedOpportunity.organization} Alumni Network`, platform: 'LinkedIn', url: `https://linkedin.com/company/${selectedOpportunity.organization.toLowerCase().replace(/\s/g,'-')}`, desc: 'Connect with former program participants and get insider tips.' },
-                    { name: 'Scholarship Hunters Africa', platform: 'Telegram', url: 'https://t.me/scholarshiphuntersafrica', desc: 'Active community sharing scholarship deadlines and application tips.' },
-                  ].map((group, i) => (
-                    <div key={i} style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border-card)', background: 'var(--bg-input)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ minWidth: 0 }}>
-                        <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{group.name}</p>
-                        <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{group.desc}</p>
+            {/* RIGHT: Actionable Application Roadmap */}
+            <div className="discovery-split-right">
+              <div className="card" style={{ padding: '24px' }}>
+                <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginTop: 0, marginBottom: '14px' }}>
+                  Application Roadmap
+                </h3>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                  {result.application_tips.map((tip, i) => {
+                    const checked = !!checkedRoadmap[i];
+                    return (
+                      <div key={i} id={`roadmap-item-${i}`} onClick={() => toggleRoadmap(i)}
+                        className={`checklist-item ${checked ? 'done' : ''}`}>
+                        <div style={{ flexShrink: 0, marginTop: '1px', color: checked ? '#22c55e' : 'var(--text-muted)' }}>
+                          {checked ? <CheckSquare size={15} /> : <Square size={15} />}
+                        </div>
+                        <span style={{ fontSize: '13px', color: checked ? 'var(--text-muted)' : 'var(--text-primary)',
+                          textDecoration: checked ? 'line-through' : 'none', lineHeight: 1.55 }}>
+                          {tip}
+                        </span>
                       </div>
-                      <a href={group.url} target="_blank" rel="noopener noreferrer" className="btn-primary"
-                        style={{ padding: '7px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', borderRadius: '10px', textDecoration: 'none' }}>
-                        <ExternalLink size={12} /> {group.platform}
-                      </a>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
-              )}
+              </div>
             </div>
           </div>
-        </div>
+        )}
+
+        {/* CONNECT NETWORK TAB */}
+        {detailTab === 'connect' && (
+          <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column' }}>
+            <div style={{ flexShrink: 0 }}>
+              <p style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>
+                Connect Network
+              </p>
+              <h2 style={{ fontSize: '16px', fontWeight: 800, color: 'var(--text-primary)', margin: '0 0 12px', letterSpacing: '-0.3px' }}>
+                Networking Suite
+              </h2>
+              <div className="sub-tab-nav">
+                <button className={`sub-tab-btn ${networkTab === 'mentors' ? 'active' : ''}`} onClick={() => setNetworkTab('mentors')}>Mentors</button>
+                <button className={`sub-tab-btn ${networkTab === 'communities' ? 'active' : ''}`} onClick={() => setNetworkTab('communities')}>Communities</button>
+              </div>
+            </div>
+
+            {networkTab === 'mentors' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
+                {result.suggested_contacts.length > 0 ? result.suggested_contacts.map((contact, i) => {
+                  const copyId = `contact-${i}`;
+                  const isCopied = !!copiedStates[copyId];
+                  const isSaved  = !!savedStates[`s-${i}`];
+                  return (
+                    <div key={i} className="contact-card">
+                      <div className="contact-card-header">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                          <div className="contact-avatar"><UserCheck size={16} /></div>
+                          <div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>{contact.name}</span>
+                              {contact.source === 'github_api' ? (
+                                <span style={{ fontSize: '10px', fontWeight: 600, background: 'var(--bg-tag)', border: '1px solid var(--border-card)', color: 'var(--text-secondary)', padding: '1px 6px', borderRadius: '4px' }}>GitHub</span>
+                              ) : contact.source === 'mock' ? (
+                                <span style={{ fontSize: '10px', fontWeight: 600, background: '#fef9c3', color: '#854d0e', padding: '1px 6px', borderRadius: '4px' }}>Sample</span>
+                              ) : (
+                                <span style={{ fontSize: '10px', fontWeight: 600, background: '#dbeafe', color: '#1e40af', padding: '1px 6px', borderRadius: '4px' }}>LinkedIn</span>
+                              )}
+                            </div>
+                            <p style={{ fontSize: '11.5px', color: 'var(--text-muted)', margin: 0, marginTop: '1px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '170px' }}>
+                              {contact.snippet}
+                            </p>
+                          </div>
+                        </div>
+                        <a href={contact.profile_url} target="_blank" rel="noopener noreferrer"
+                          style={{ flexShrink: 0, padding: '6px', borderRadius: '8px', border: '1px solid var(--border-card)', color: 'var(--text-muted)', display: 'flex', background: 'var(--bg-card)' }}>
+                          <ExternalLink size={13} />
+                        </a>
+                      </div>
+                      <div className="contact-message-preview">{contact.suggested_message}</div>
+                      <div className="contact-actions">
+                        <button id={`copy-message-${i}`} onClick={() => handleCopy(contact.suggested_message, copyId)}
+                          className={isCopied ? 'btn-ghost' : 'btn-primary'}
+                          style={{ flex: 1, justifyContent: 'center', padding: '8px', fontSize: '12px', gap: '6px' }}>
+                          {isCopied ? <><Check size={12} /> Copied!</> : <><Clipboard size={12} /> Copy Message</>}
+                        </button>
+                        <button id={`save-draft-${i}`} onClick={() => handleSave(contact, i)} className="btn-ghost"
+                          style={{ padding: '8px 12px', fontSize: '12px', gap: '5px', display: 'flex', alignItems: 'center' }}
+                          title={isSaved ? 'Saved to Library' : 'Save to Library & Drafts'}>
+                          {isSaved ? <BookmarkCheck size={13} color="#16a34a" /> : <Bookmark size={13} />}
+                        </button>
+                      </div>
+                    </div>
+                  );
+                }) : (
+                  <div style={{ textAlign: 'center', padding: '32px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+                    No networking contacts generated.
+                  </div>
+                )}
+              </div>
+            )}
+
+            {networkTab === 'communities' && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
+                {[
+                  { name: 'Tech Career Africa', platform: 'Telegram', url: 'https://t.me/techcareerafrica', desc: 'Opportunities, referrals, and career tips for African tech professionals.' },
+                  { name: `${selectedOpportunity.organization} Alumni Network`, platform: 'LinkedIn', url: `https://linkedin.com/company/${selectedOpportunity.organization.toLowerCase().replace(/\s/g,'-')}`, desc: 'Connect with former program participants and get insider tips.' },
+                  { name: 'Scholarship Hunters Africa', platform: 'Telegram', url: 'https://t.me/scholarshiphuntersafrica', desc: 'Active community sharing scholarship deadlines and application tips.' },
+                ].map((group, i) => (
+                  <div key={i} style={{ padding: '14px', borderRadius: '12px', border: '1px solid var(--border-card)', background: 'var(--bg-input)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div style={{ minWidth: 0 }}>
+                      <p style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', margin: 0 }}>{group.name}</p>
+                      <p style={{ fontSize: '11px', color: 'var(--text-muted)', margin: '2px 0 0' }}>{group.desc}</p>
+                    </div>
+                    <a href={group.url} target="_blank" rel="noopener noreferrer" className="btn-primary"
+                      style={{ padding: '7px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', whiteSpace: 'nowrap', borderRadius: '10px', textDecoration: 'none' }}>
+                      <ExternalLink size={12} /> {group.platform}
+                    </a>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </div>
     );
   }

@@ -191,7 +191,7 @@ export const LeadsMobile: React.FC = () => {
   const handleCountryChange = (val: string) => {
     setLeadProfile({ ...leadProfile, country: val });
     if (!val.trim()) { setCountrySuggestions([]); return; }
-    const filtered = COUNTRIES.filter(c => c.toLowerCase().includes(val.toLowerCase())).slice(0, 6);
+    const filtered = COUNTRIES.filter(c => c.toLowerCase().includes(val.toLowerCase())).slice(0, 3);
     setCountrySuggestions(filtered);
   };
 
@@ -199,7 +199,7 @@ export const LeadsMobile: React.FC = () => {
     const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
     if (items.length === 0) return null;
     return (
-      <div ref={refObj} style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-input)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '180px', overflowY: 'auto', padding: '4px 0', marginTop: '4px' }}>
+      <div ref={refObj} style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-input)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '120px', overflowY: 'auto', padding: '4px 0', marginTop: '4px' }}>
         {items.map((item, idx) => (
           <div key={idx} style={{ padding: '10px 14px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer', background: hoveredIdx === idx ? 'var(--bg-input)' : 'transparent' }}
             onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)}
@@ -480,7 +480,7 @@ export const LeadsMobile: React.FC = () => {
                   />
                 </div>
 
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', isolation: 'isolate' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
                   <input
                     type="text"
@@ -627,7 +627,7 @@ export const LeadsMobile: React.FC = () => {
               </div>
 
               <form onSubmit={handleFindJobs} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                <div style={{ position: 'relative' }}>
+                <div style={{ position: 'relative', isolation: 'isolate' }}>
                   <label style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
                   <input
                     type="text"

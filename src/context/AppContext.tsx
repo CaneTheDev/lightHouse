@@ -18,6 +18,8 @@ export interface Opportunity {
   requirements: string;
   type?: string;
   url?: string;
+  description?: string;   // Full position overview (from discovery)
+  availability?: string;  // Requirements / deadline / availability text
 }
 
 export interface ContactResult {
@@ -397,7 +399,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         organization: opp.organization,
         requirements: `${opp.description}\n\nAvailability: ${opp.availability}`,
         type: category,
-        url: opp.url
+        url: opp.url,
+        description: opp.description,
+        availability: opp.availability,
       }));
 
       setOpportunities(prev => {

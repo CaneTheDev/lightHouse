@@ -42,7 +42,7 @@ export const DiscoveryMobile: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [isDiscovering, setIsDiscovering] = useState(false);
-  const [detailTab, setDetailTab] = useState<'strategy' | 'connect'>('strategy');
+  const [detailTab, setDetailTab] = useState<'about' | 'strategy' | 'connect'>('about');
   const [networkTab, setNetworkTab] = useState<'mentors' | 'communities'>('mentors');
   const [checkedRoadmap, setCheckedRoadmap] = useState<Record<number, boolean>>({});
   const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
@@ -67,7 +67,7 @@ export const DiscoveryMobile: React.FC = () => {
     setCheckedRoadmap({});
     setAccordionOpen(false);
     setNetworkTab('mentors');
-    setDetailTab('strategy');
+    setDetailTab('about');
   }, [oppId]);
 
   const handleAnalyze = async (opp: Opportunity, forceReanalyze = false) => {
@@ -159,10 +159,6 @@ export const DiscoveryMobile: React.FC = () => {
   const toggleRoadmap = (i: number) =>
     setCheckedRoadmap(prev => ({ ...prev, [i]: !prev[i] }));
 
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const strokeDashoffset = circumference - (animatedScore / 100) * circumference;
-
   const probClass = result
     ? result.success_probability.toLowerCase() === 'high' ? 'prob-high'
     : result.success_probability.toLowerCase() === 'medium' ? 'prob-medium' : 'prob-low' : '';
@@ -233,45 +229,147 @@ export const DiscoveryMobile: React.FC = () => {
 
         {/* Mobile Tab bar */}
         <div style={{ display: 'flex', background: 'var(--bg-input)', borderRadius: '12px', padding: '4px', marginBottom: '16px' }}>
+          <button onClick={() => setDetailTab('about')} style={{
+            flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
+            background: detailTab === 'about' ? 'var(--bg-card)' : 'transparent',
+            color: detailTab === 'about' ? 'var(--text-primary)' : 'var(--text-muted)',
+            fontSize: '12px', fontWeight: 700,
+            boxShadow: detailTab === 'about' ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
+            cursor: 'pointer', transition: 'all 0.15s ease'
+          }}>About</button>
           <button onClick={() => setDetailTab('strategy')} style={{
             flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
             background: detailTab === 'strategy' ? 'var(--bg-card)' : 'transparent',
             color: detailTab === 'strategy' ? 'var(--text-primary)' : 'var(--text-muted)',
-            fontSize: '13px', fontWeight: 700,
+            fontSize: '12px', fontWeight: 700,
             boxShadow: detailTab === 'strategy' ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
             cursor: 'pointer', transition: 'all 0.15s ease'
-          }}>Match Strategy</button>
+          }}>Strategy</button>
           <button onClick={() => setDetailTab('connect')} style={{
             flex: 1, padding: '10px', borderRadius: '9px', border: 'none',
             background: detailTab === 'connect' ? 'var(--bg-card)' : 'transparent',
             color: detailTab === 'connect' ? 'var(--text-primary)' : 'var(--text-muted)',
-            fontSize: '13px', fontWeight: 700,
+            fontSize: '12px', fontWeight: 700,
             boxShadow: detailTab === 'connect' ? '0 1px 4px rgba(0,0,0,0.05)' : 'none',
             cursor: 'pointer', transition: 'all 0.15s ease'
-          }}>Connect Network</button>
+          }}>Connect</button>
         </div>
+
+        {/* ABOUT TAB */}
+        {detailTab === 'about' && (() => {
+          const rawReqs = selectedOpportunity.requirements || '';
+          const splitIdx = rawReqs.indexOf('\n\nAvailability:');
+          const overview = selectedOpportunity.description
+            || (splitIdx !== -1 ? rawReqs.slice(0, splitIdx).trim() : rawReqs.trim());
+          const requirementsText = selectedOpportunity.availability
+            || (splitIdx !== -1 ? rawReqs.slice(splitIdx + 2).trim() : '');
+
+          return (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              {/* Position Overview */}
+              <div className="card" style={{ padding: '16px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                  <div style={{
+                    width: '26px', height: '26px', borderRadius: '7px',
+                    background: 'linear-gradient(135deg, #3b82f615, #6366f115)',
+                    border: '1px solid var(--border-card)',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                  }}>
+                    <Clipboard size={13} style={{ color: '#3b82f6' }} />
+                  </div>
+                  <h3 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Position Overview
+                  </h3>
+                </div>
+                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+                  {overview || 'No description available for this opportunity.'}
+                </p>
+              </div>
+
+              {/* Requirements */}
+              {requirementsText && (
+                <div className="card" style={{ padding: '16px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '10px' }}>
+                    <div style={{
+                      width: '26px', height: '26px', borderRadius: '7px',
+                      background: 'linear-gradient(135deg, #10b98115, #059e6a15)',
+                      border: '1px solid var(--border-card)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
+                    }}>
+                      <CheckCircle2 size={13} style={{ color: '#10b981' }} />
+                    </div>
+                    <h3 style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-primary)', margin: 0, textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                      Requirements & Availability
+                    </h3>
+                  </div>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.6, margin: 0, whiteSpace: 'pre-wrap' }}>
+                    {requirementsText}
+                  </p>
+                </div>
+              )}
+
+              {/* Quick Action */}
+              <div className="card" style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px', flexWrap: 'wrap' }}>
+                <div>
+                  <p style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>
+                    {selectedOpportunity.organization}
+                  </p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                    <span className={`badge ${selectedOpportunity.type ? `badge-${selectedOpportunity.type}` : 'badge-default'}`}
+                      style={{ fontSize: '9px', padding: '2px 7px' }}>
+                      {selectedOpportunity.type || 'opportunity'}
+                    </span>
+                    <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>
+                      · {result.success_probability} match
+                    </span>
+                  </div>
+                </div>
+                {selectedOpportunity.url && (
+                  <a href={selectedOpportunity.url} target="_blank" rel="noopener noreferrer"
+                    className="btn-primary"
+                    style={{ padding: '7px 14px', fontSize: '12px', display: 'inline-flex', alignItems: 'center', gap: '4px', borderRadius: '8px', textDecoration: 'none', fontWeight: 600 }}>
+                    <ExternalLink size={12} /> Apply
+                  </a>
+                )}
+              </div>
+            </div>
+          );
+        })()}
 
         {detailTab === 'strategy' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
             <div className="card" style={{ padding: '16px' }}>
-              <div style={{ display: 'flex', gap: '14px', alignItems: 'center' }}>
-                <div style={{ position: 'relative', width: '80px', height: '80px', flexShrink: 0 }}>
-                  <svg width="80" height="80" style={{ transform: 'rotate(-90deg)' }}>
-                    <circle cx="40" cy="40" r={radius} className="score-ring-track" fill="none" strokeWidth="6" />
-                    <circle cx="40" cy="40" r={radius} className={`score-ring-fill ${scoreStrokeClass}`}
-                      fill="none" strokeWidth="6" strokeDasharray={circumference}
-                      strokeDashoffset={strokeDashoffset} strokeLinecap="round" />
-                  </svg>
-                  <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-                    <span style={{ fontSize: '18px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{animatedScore}%</span>
-                    <span style={{ fontSize: '8px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fit</span>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                {/* Header Row with Fit Score and Status */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <div style={{ position: 'relative', width: '60px', height: '60px', flexShrink: 0 }}>
+                    <svg width="60" height="60" viewBox="0 0 60 60" style={{ transform: 'rotate(-90deg)' }}>
+                      <circle cx="30" cy="30" r="26" className="score-ring-track" fill="none" strokeWidth="5" />
+                      <circle cx="30" cy="30" r="26" className={`score-ring-fill ${scoreStrokeClass}`}
+                        fill="none" strokeWidth="5" strokeDasharray={2 * Math.PI * 26}
+                        strokeDashoffset={2 * Math.PI * 26 - (animatedScore / 100) * (2 * Math.PI * 26)} strokeLinecap="round" />
+                    </svg>
+                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
+                      <span style={{ fontSize: '14px', fontWeight: 900, color: 'var(--text-primary)', lineHeight: 1 }}>{animatedScore}%</span>
+                      <span style={{ fontSize: '7px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase' }}>Fit</span>
+                    </div>
+                  </div>
+                  <div>
+                    <h3 style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                      Match Rating
+                    </h3>
+                    <p style={{ fontSize: '14px', fontWeight: 800, color: 'var(--text-primary)', margin: '2px 0 0' }}>
+                      {result.success_probability} Eligibility Match
+                    </p>
                   </div>
                 </div>
-                <div style={{ minWidth: 0 }}>
-                  <h3 style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px 0' }}>
+
+                {/* Eligibility Reasoning */}
+                <div>
+                  <h4 style={{ fontSize: '10px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px 0' }}>
                     Eligibility Reasoning
-                  </h3>
-                  <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
+                  </h4>
+                  <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: 1.55, margin: 0 }}>
                     {result.eligibility_reasoning}
                   </p>
                 </div>
