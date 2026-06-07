@@ -51,7 +51,7 @@ export const Coach: React.FC = () => {
   const [extractedText, setExtractedText] = useState('');
   const [currentFile, setCurrentFile] = useState<{ name: string; type: string } | null>(null);
   
-  const { extractFromFile, isExtracting, progress } = useCvExtractor();
+  const { extractFromFile, isExtracting, progress, extractionMethod } = useCvExtractor();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const oppId = useMemo(() => selectedOpportunity?.id || 'general', [selectedOpportunity?.id]);
@@ -392,6 +392,7 @@ export const Coach: React.FC = () => {
           extractedText={extractedText}
           isExtracting={isExtracting}
           progress={progress}
+          extractionMethod={extractionMethod}
           onSend={handleSendCvText}
         />
       )}

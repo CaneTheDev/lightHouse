@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
-import { X, FileText, Check, Loader2, Search } from 'lucide-react';
-import type { ExtractionProgress } from '../Coach/useCvExtractor';
+import { X, FileText, AlertTriangle, Check, Loader2, Search, ScanLine } from 'lucide-react';
+import type { ExtractionProgress, ExtractionMethod } from '../Coach/useCvExtractor';
 
 interface LeadsCvUploadModalProps {
   isOpen: boolean;
@@ -10,6 +10,7 @@ interface LeadsCvUploadModalProps {
   extractedText: string;
   isExtracting: boolean;
   progress: ExtractionProgress | null;
+  extractionMethod: ExtractionMethod;
   onConfirm: (text: string) => void;
 }
 
@@ -20,25 +21,34 @@ export const LeadsCvUploadModal: React.FC<LeadsCvUploadModalProps> = ({
   extractedText,
   isExtracting,
   progress,
+  extractionMethod,
   onConfirm,
 }) => {
   const [editedText, setEditedText] = useState('');
 
   useEffect(() => {
-    if (extractedText) {
-      setEditedText(extractedText);
-    } else {
-      setEditedText('');
-    }
+    setEditedText(extractedText ?? '');
   }, [extractedText]);
 
   if (!isOpen) return null;
+
+  const usedOcr = extractionMethod === 'ocr';
+  // OCR triggered automatically because a PDF had no embedded text
+  const isScannedPdf = usedOcr && !fileName.match(/\.(png|jpe?g|gif|webp|bmp|tiff?)$/i);
+  const isSparse = !isExtracting && editedText.replace(/\s/g, '').length < 100;
 
   const handleConfirm = () => {
     if (!editedText.trim()) return;
     onConfirm(editedText);
     onClose();
   };
+
+  // Dynamic loading note depending on current phase
+  const loadingNote = isScannedPdf
+    ? 'Scanned PDF detected — rendering pages and running OCR. This may take a moment.'
+    : usedOcr
+    ? 'First-time OCR setup might take a few seconds to load language libraries.'
+    : 'Parsing PDF structure and reconstructing text layout...';
 
   return (
     <div className="cv-modal-overlay">
@@ -62,28 +72,65 @@ export const LeadsCvUploadModal: React.FC<LeadsCvUploadModalProps> = ({
           {isExtracting ? (
             <div className="cv-extracting-state">
               <Loader2 size={36} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-              <h4>Extracting career details...</h4>
+              <h4>
+                {progress?.status?.toLowerCase().includes('ocr') || isScannedPdf
+                  ? 'Running OCR...'
+                  : 'Extracting career details...'}
+              </h4>
               <p>{progress?.status || 'Reading document structure...'}</p>
-              
+
               <div className="cv-progress-container">
                 <div className="cv-progress-bar-bg">
-                  <div 
-                    className="cv-progress-bar-fill" 
+                  <div
+                    className="cv-progress-bar-fill"
                     style={{ width: `${(progress?.progress || 0.1) * 100}%` }}
                   />
                 </div>
               </div>
-              
-              <span className="cv-modal-loading-note">
-                Our AI is extracting your skills, education, and interests to find the best job matches.
-              </span>
+
+              <span className="cv-modal-loading-note">{loadingNote}</span>
             </div>
           ) : (
             <>
-              <div className="cv-accuracy-note" style={{ background: 'var(--bg-tag)', border: '1px solid var(--border-card)', color: 'var(--text-secondary)' }}>
-                <FileText size={15} />
-                <span>Please review the extracted text. This will be used to automatically find appropriate jobs for you.</span>
-              </div>
+              {/* OCR / accuracy notice */}
+              {usedOcr && (
+                <div className="cv-accuracy-note">
+                  <ScanLine size={15} />
+                  <span>
+                    {isScannedPdf
+                      ? 'This PDF had no embedded text, so OCR was used. Please review and correct any errors below.'
+                      : 'OCR extracted text from an image. Please review and correct any errors below.'}
+                  </span>
+                </div>
+              )}
+
+              {/* Info banner for clean PDF extraction */}
+              {!usedOcr && !isSparse && (
+                <div
+                  className="cv-accuracy-note"
+                  style={{ background: 'var(--bg-tag)', border: '1px solid var(--border-card)', color: 'var(--text-secondary)' }}
+                >
+                  <FileText size={15} />
+                  <span>Please review the extracted text. This will be used to automatically find appropriate jobs for you.</span>
+                </div>
+              )}
+
+              {/* Sparse text warning */}
+              {isSparse && (
+                <div
+                  className="cv-accuracy-note"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    borderColor: 'rgba(245, 158, 11, 0.3)',
+                    color: '#b45309',
+                  }}
+                >
+                  <AlertTriangle size={15} />
+                  <span>
+                    Very little text was extracted. Paste your CV content directly into the box below for better job matching results.
+                  </span>
+                </div>
+              )}
 
               <div className="cv-textarea-container">
                 <textarea
@@ -98,10 +145,10 @@ export const LeadsCvUploadModal: React.FC<LeadsCvUploadModalProps> = ({
         </div>
 
         <div className="cv-modal-footer">
-          <button 
-            type="button" 
-            className="btn-ghost" 
-            onClick={onClose} 
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onClose}
             disabled={isExtracting}
           >
             Cancel

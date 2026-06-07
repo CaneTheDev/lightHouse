@@ -5,6 +5,9 @@ import {
   X, GraduationCap, MapPin, User, 
   ArrowLeft 
 } from 'lucide-react';
+import { getNames } from 'country-list';
+
+const COUNTRIES = getNames();
 
 export const OnboardingMobile: React.FC = () => {
   const { saveProfile, userProfile, activeView, resetProfile } = useApp();
@@ -34,11 +37,13 @@ export const OnboardingMobile: React.FC = () => {
   const [majorSuggestions, setMajorSuggestions] = useState<string[]>([]);
   const [skillSuggestions, setSkillSuggestions] = useState<string[]>([]);
   const [interestSuggestions, setInterestSuggestions] = useState<string[]>([]);
+  const [locationSuggestions, setLocationSuggestions] = useState<string[]>([]);
 
   // Refs for closing dropdowns on outside clicks
   const majorRef = useRef<HTMLDivElement>(null);
   const skillRef = useRef<HTMLDivElement>(null);
   const interestRef = useRef<HTMLDivElement>(null);
+  const locationRef = useRef<HTMLDivElement>(null);
 
   // Close suggestions on click outside
   useEffect(() => {
@@ -51,6 +56,9 @@ export const OnboardingMobile: React.FC = () => {
       }
       if (interestRef.current && !interestRef.current.contains(e.target as Node)) {
         setInterestSuggestions([]);
+      }
+      if (locationRef.current && !locationRef.current.contains(e.target as Node)) {
+        setLocationSuggestions([]);
       }
     };
     document.addEventListener('click', handleOutsideClick);
@@ -73,6 +81,18 @@ export const OnboardingMobile: React.FC = () => {
       console.error('Datamuse API error:', err);
     }
     return [];
+  };
+
+  const handleLocationChange = (val: string) => {
+    setLocation(val);
+    if (!val.trim()) {
+      setLocationSuggestions([]);
+      return;
+    }
+    const filtered = COUNTRIES.filter(c => 
+      c.toLowerCase().includes(val.toLowerCase())
+    ).slice(0, 5);
+    setLocationSuggestions(filtered);
   };
 
   const handleMajorChange = async (val: string) => {
@@ -212,7 +232,7 @@ export const OnboardingMobile: React.FC = () => {
         />
       </div>
 
-      <div>
+      <div ref={locationRef} style={{ position: 'relative' }}>
         <div className="label">
           <MapPin size={13} /> Location / Country *
         </div>
@@ -222,9 +242,17 @@ export const OnboardingMobile: React.FC = () => {
           required
           placeholder="Nigeria, Kenya, South Africa..."
           value={location}
-          onChange={e => setLocation(e.target.value)}
+          onChange={e => handleLocationChange(e.target.value)}
           className="input-clean"
           style={{ fontSize: '13.5px' }}
+          autoComplete="off"
+        />
+        <SuggestionList 
+          items={locationSuggestions} 
+          onSelect={(item) => {
+            setLocation(item);
+            setLocationSuggestions([]);
+          }} 
         />
       </div>
 

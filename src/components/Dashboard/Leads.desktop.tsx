@@ -18,27 +18,62 @@ interface CustomLead {
 export const LeadsDesktop: React.FC = () => {
   const { 
     savedLeads, removeLead, saveLead,
-    runAnalysis, selectOpportunity, analysisResults, discoveryComment
+    runAnalysis, selectOpportunity, analysisResults, discoveryComment,
+    userProfile
   } = useApp();
   
   // CV Upload State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [cvText, setCvText] = useState('');
   const [currentFile, setCurrentFile] = useState<{ name: string; type: string } | null>(null);
-  const { extractFromFile, isExtracting, progress } = useCvExtractor();
+  const { extractFromFile, isExtracting, progress, extractionMethod } = useCvExtractor();
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Parse initial location from profile
+  const getInitialLocation = () => {
+    let country = '';
+    let state = '';
+    if (userProfile?.location) {
+      const parts = userProfile.location.split(',').map(p => p.trim());
+      if (parts.length > 1) {
+        state = parts[0];
+        country = parts[1];
+      } else {
+        country = userProfile.location;
+      }
+    }
+    return { country, state };
+  };
+
+  const initialLoc = getInitialLocation();
 
   // States for the new job discovery flow
   const [step, setStep] = useState<'initial' | 'form' | 'cv_location' | 'results'>('initial');
   const [leadProfile, setLeadProfile] = useState({
-    name: '',
-    major: '',
-    academicLevel: 'University',
-    skills: '',
-    interests: '',
-    country: '',
-    state: ''
+    name: userProfile?.name || '',
+    major: userProfile?.major || '',
+    academicLevel: userProfile?.academicLevel || 'University',
+    skills: userProfile?.skills ? userProfile.skills.join(', ') : '',
+    interests: userProfile?.interests ? userProfile.interests.join(', ') : '',
+    country: initialLoc.country,
+    state: initialLoc.state
   });
+
+  // Sync with user profile if it loads/updates, without overwriting user edits
+  useEffect(() => {
+    if (userProfile) {
+      const loc = getInitialLocation();
+      setLeadProfile(prev => ({
+        name: prev.name || userProfile.name || '',
+        major: prev.major || userProfile.major || '',
+        academicLevel: prev.academicLevel || userProfile.academicLevel || 'University',
+        skills: prev.skills || (userProfile.skills ? userProfile.skills.join(', ') : ''),
+        interests: prev.interests || (userProfile.interests ? userProfile.interests.join(', ') : ''),
+        country: prev.country || loc.country,
+        state: prev.state || loc.state
+      }));
+    }
+  }, [userProfile]);
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [foundJobs, setFoundJobs] = useState<Opportunity[]>([]);
@@ -918,6 +953,7 @@ export const LeadsDesktop: React.FC = () => {
           extractedText={cvText}
           isExtracting={isExtracting}
           progress={progress}
+          extractionMethod={extractionMethod}
           onConfirm={handleSendCvText}
         />
       )}

@@ -1,7 +1,7 @@
 import type React from 'react';
 import { useState, useEffect } from 'react';
-import { X, FileText, AlertTriangle, Check, Loader2 } from 'lucide-react';
-import type { ExtractionProgress } from './useCvExtractor';
+import { X, FileText, AlertTriangle, Check, Loader2, ScanLine } from 'lucide-react';
+import type { ExtractionProgress, ExtractionMethod } from './useCvExtractor';
 
 interface CvUploadModalProps {
   isOpen: boolean;
@@ -11,6 +11,7 @@ interface CvUploadModalProps {
   extractedText: string;
   isExtracting: boolean;
   progress: ExtractionProgress | null;
+  extractionMethod: ExtractionMethod;
   onSend: (text: string) => void;
 }
 
@@ -22,27 +23,34 @@ export const CvUploadModal: React.FC<CvUploadModalProps> = ({
   extractedText,
   isExtracting,
   progress,
+  extractionMethod,
   onSend,
 }) => {
   const [editedText, setEditedText] = useState('');
 
   useEffect(() => {
-    if (extractedText) {
-      setEditedText(extractedText);
-    } else {
-      setEditedText('');
-    }
+    setEditedText(extractedText ?? '');
   }, [extractedText]);
 
   if (!isOpen) return null;
 
   const isImage = fileType.startsWith('image/');
+  const usedOcr = extractionMethod === 'ocr';
+  const isScannedPdf = usedOcr && !isImage; // OCR triggered as fallback on a PDF
+  const isSparse = !isExtracting && editedText.replace(/\s/g, '').length < 100;
 
   const handleSend = () => {
     if (!editedText.trim()) return;
     onSend(editedText);
     onClose();
   };
+
+  // Dynamic loading note depending on current phase
+  const loadingNote = isScannedPdf
+    ? 'Scanned PDF detected — rendering pages and running OCR. This may take a moment.'
+    : isImage
+    ? 'First-time OCR setup might take a few seconds to load language libraries.'
+    : 'Parsing PDF structure and reconstructing text layout...';
 
   return (
     <div className="cv-modal-overlay">
@@ -66,30 +74,52 @@ export const CvUploadModal: React.FC<CvUploadModalProps> = ({
           {isExtracting ? (
             <div className="cv-extracting-state">
               <Loader2 size={36} className="animate-spin" style={{ color: 'var(--primary)', marginBottom: '16px' }} />
-              <h4>Extracting text locally...</h4>
+              <h4>
+                {progress?.status?.toLowerCase().includes('ocr') || isScannedPdf
+                  ? 'Running OCR...'
+                  : 'Extracting text locally...'}
+              </h4>
               <p>{progress?.status || 'Processing file...'}</p>
-              
+
               <div className="cv-progress-container">
                 <div className="cv-progress-bar-bg">
-                  <div 
-                    className="cv-progress-bar-fill" 
+                  <div
+                    className="cv-progress-bar-fill"
                     style={{ width: `${(progress?.progress || 0.1) * 100}%` }}
                   />
                 </div>
               </div>
-              
-              <span className="cv-modal-loading-note">
-                {isImage 
-                  ? 'First-time OCR setup might take a few seconds to load language libraries.' 
-                  : 'Parsing PDF structure and contents...'}
-              </span>
+
+              <span className="cv-modal-loading-note">{loadingNote}</span>
             </div>
           ) : (
             <>
-              {isImage && (
+              {/* OCR / accuracy notice */}
+              {usedOcr && (
                 <div className="cv-accuracy-note">
+                  <ScanLine size={15} />
+                  <span>
+                    {isScannedPdf
+                      ? 'This PDF had no embedded text, so OCR was used to read it. Please review and correct any errors below.'
+                      : 'OCR extracted text from an image. Please review and correct any spelling or format errors below.'}
+                  </span>
+                </div>
+              )}
+
+              {/* Sparse text warning */}
+              {isSparse && (
+                <div
+                  className="cv-accuracy-note"
+                  style={{
+                    background: 'rgba(245, 158, 11, 0.08)',
+                    borderColor: 'rgba(245, 158, 11, 0.3)',
+                    color: '#b45309',
+                  }}
+                >
                   <AlertTriangle size={15} />
-                  <span>OCR extracted text from an image. Please review and correct any spelling mistakes or format errors below.</span>
+                  <span>
+                    Very little text was extracted. You can paste your CV content directly into the box below before sending.
+                  </span>
                 </div>
               )}
 
@@ -106,10 +136,10 @@ export const CvUploadModal: React.FC<CvUploadModalProps> = ({
         </div>
 
         <div className="cv-modal-footer">
-          <button 
-            type="button" 
-            className="btn-ghost" 
-            onClick={onClose} 
+          <button
+            type="button"
+            className="btn-ghost"
+            onClick={onClose}
             disabled={isExtracting}
           >
             Cancel
