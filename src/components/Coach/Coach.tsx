@@ -70,8 +70,8 @@ export const Coach: React.FC = () => {
     setInput('');
     setLoading(true);
 
+    const updatedHistory = [...history, userMessage];
     try {
-      const updatedHistory = [...history, userMessage];
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/chat`, {
         method: 'POST',

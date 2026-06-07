@@ -1,9 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
-import type { Opportunity } from '../../context/AppContext';
 import { 
   ClipboardList, CheckCircle2, XCircle, Clock, 
-  ChevronRight, Calendar, ArrowRight, Award
+  Calendar, ArrowRight
 } from 'lucide-react';
 
 type ApplicationStatus = 'Interested' | 'Applying' | 'Submitted' | 'Interview' | 'Accepted' | 'Rejected';

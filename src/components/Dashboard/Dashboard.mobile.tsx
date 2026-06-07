@@ -2,7 +2,7 @@ import React from 'react';
 import { useApp } from '../../context/AppContext';
 import type { Opportunity } from '../../context/AppContext';
 import { 
-  GraduationCap, MapPin, Zap, MessageSquare
+  GraduationCap, MapPin, MessageSquare
 } from 'lucide-react';
 import './Dashboard.mobile.css';
 

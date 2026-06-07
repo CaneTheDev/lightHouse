@@ -2,8 +2,8 @@ import type React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Plus, X, GraduationCap, MapPin, User, Trash2, 
-  ArrowRight, ArrowLeft, Check, Sparkles 
+  X, GraduationCap, MapPin, User, 
+  ArrowLeft 
 } from 'lucide-react';
 
 export const OnboardingMobile: React.FC = () => {

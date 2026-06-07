@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import { Lock, Mail, ArrowRight, UserPlus, LogIn } from 'lucide-react';
+import { Lock, Mail, UserPlus, LogIn } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login, signup } = useApp();
@@ -215,4 +215,5 @@ export const Login: React.FC = () => {
     </div>
   );
 };
+
 export default Login;

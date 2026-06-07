@@ -1,15 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  ArrowLeft, CheckSquare, Square, Clipboard, Check, 
-  Terminal, ChevronDown, ChevronUp, AlertCircle, Compass 
+  ArrowLeft, CheckSquare, Square, 
+  Terminal, AlertCircle, Compass, Settings 
 } from 'lucide-react';
 import './Dashboard.css';
 
 export const MatchStrategy: React.FC = () => {
-  const { selectedOpportunity, analysisResults, setView, selectOpportunity } = useApp();
-  const [copiedStates, setCopiedStates] = useState<Record<string, boolean>>({});
-  const [isAccordionOpen, setIsAccordionOpen] = useState(false);
+  const { selectedOpportunity, analysisResults, setView } = useApp();
   const [checkedRoadmap, setCheckedRoadmap] = useState<Record<number, boolean>>({});
   const [animatedScore, setAnimatedScore] = useState(0);
 

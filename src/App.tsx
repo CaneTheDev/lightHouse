@@ -1,46 +1,57 @@
-import type React from 'react';
+import React, { Suspense, lazy } from 'react';
 import { AppProvider, useApp } from './context/AppContext';
-import { Login } from './components/Auth/Login';
-import { Onboarding } from './components/Onboarding/Onboarding';
-import { Discovery } from './components/Discovery/Discovery';
-import { Loader } from './components/Loader/Loader';
-import { Dashboard } from './components/Dashboard/Dashboard';
-import { Coach } from './components/Coach/Coach';
-import { Leads } from './components/Dashboard/Leads';
 import { AppShell } from './components/Layout/AppShell';
+
+// Lazy load components
+const Login = lazy(() => import('./components/Auth/Login'));
+const Onboarding = lazy(() => import('./components/Onboarding/Onboarding'));
+const Discovery = lazy(() => import('./components/Discovery/Discovery'));
+const Loader = lazy(() => import('./components/Loader/Loader'));
+const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
+const Coach = lazy(() => import('./components/Coach/Coach'));
+const Leads = lazy(() => import('./components/Dashboard/Leads'));
+const MatchStrategy = lazy(() => import('./components/Dashboard/MatchStrategy'));
 
 const AppContent: React.FC = () => {
   const { activeView } = useApp();
 
-  if (activeView === 'login') {
-    return <Login />;
-  }
-
-  if (activeView === 'onboarding') {
-    return <Onboarding />;
-  }
-
   return (
-    <AppShell>
+    <Suspense fallback={null}>
       {(() => {
-        switch (activeView) {
-          case 'dashboard':
-            return <Dashboard />;
-          case 'discovery':
-            return <Discovery />;
-          case 'loader':
-            return <Loader />;
-          case 'coach':
-            return <Coach />;
-          case 'leads':
-            return <Leads />;
-          case 'profile':
-            return <Onboarding />;
-          default:
-            return <Dashboard />;
+        if (activeView === 'login') {
+          return <Login />;
         }
+
+        if (activeView === 'onboarding') {
+          return <Onboarding />;
+        }
+
+        return (
+          <AppShell>
+            {(() => {
+              switch (activeView) {
+                case 'dashboard':
+                  return <Dashboard />;
+                case 'discovery':
+                  return <Discovery />;
+                case 'loader':
+                  return <Loader />;
+                case 'coach':
+                  return <Coach />;
+                case 'leads':
+                  return <Leads />;
+                case 'match-strategy':
+                  return <MatchStrategy />;
+                case 'profile':
+                  return <Onboarding />;
+                default:
+                  return <Dashboard />;
+              }
+            })()}
+          </AppShell>
+        );
       })()}
-    </AppShell>
+    </Suspense>
   );
 };
 

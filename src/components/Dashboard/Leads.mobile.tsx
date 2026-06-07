@@ -2,9 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { Opportunity } from '../../context/AppContext';
 import { 
-  FileText, Clipboard, Check, Plus, Trash2, 
-  BookOpen, Sparkles, AlertCircle, Briefcase, Search, ArrowRight, Settings, RefreshCcw,
-  ExternalLink, Bookmark, BookmarkCheck, MapPin, GraduationCap
+  Clipboard, Check, Plus, Trash2, 
+  BookOpen, Sparkles, AlertCircle, Briefcase, Search, ArrowRight, RefreshCcw,
+  ExternalLink, Bookmark, BookmarkCheck
 } from 'lucide-react';
 
 interface CustomLead {

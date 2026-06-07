@@ -66,7 +66,8 @@ export type ActiveView =
   | 'coach'
   | 'leads'
   | 'profile'
-  | 'loader';
+  | 'loader'
+  | 'match-strategy';
 
 interface AppContextType {
   currentUser: { email: string } | null;

@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { Opportunity } from '../../context/AppContext';
-import { LogOut, CheckCircle2 } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
 
 const TYPE_ICONS: Record<string, React.ReactNode> = {
   internship: (
@@ -44,7 +44,7 @@ function getBadgeClass(type?: string) {
 }
 
 export const Directory: React.FC = () => {
-  const { userProfile, opportunities, runAnalysis, analysisResults, setView, selectOpportunity, resetProfile } = useApp();
+  const { opportunities, runAnalysis, analysisResults, setView, selectOpportunity } = useApp();
   const [filter, setFilter] = useState<'all' | 'internship' | 'scholarship' | 'fellowship'>('all');
   const [activeTab, setActiveTab] = useState<'Opportunities' | 'Saved' | 'Analyzed'>('Opportunities');
 

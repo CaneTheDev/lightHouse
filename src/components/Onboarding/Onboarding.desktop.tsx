@@ -2,7 +2,7 @@ import type React from 'react';
 import { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  Plus, X, GraduationCap, MapPin, User, Trash2, 
+  X, GraduationCap, MapPin, User, Trash2, 
   ArrowRight, ArrowLeft, Check, Sparkles 
 } from 'lucide-react';
 

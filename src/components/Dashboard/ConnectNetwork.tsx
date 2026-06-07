@@ -1,9 +1,8 @@
 import React, { useState } from 'react';
 import { useApp } from '../../context/AppContext';
-import type { Opportunity } from '../../context/AppContext';
 import { 
   Users, ExternalLink, Clipboard, Check, UserCheck, 
-  MessageSquare, Hash, HelpCircle, ArrowRight, CheckCircle2 
+  Hash
 } from 'lucide-react';
 
 export const ConnectNetwork: React.FC = () => {

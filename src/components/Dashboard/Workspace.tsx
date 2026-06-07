@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useApp } from '../../context/AppContext';
 import { 
-  CheckSquare, Square, Plus, Trash2, Edit3, 
-  Save, AlertCircle, FileText, ClipboardList 
+  CheckSquare, Square, Plus, Trash2, 
+  Save, FileText, ClipboardList 
 } from 'lucide-react';
 
 interface Task {
@@ -12,7 +12,7 @@ interface Task {
 }
 
 export const Workspace: React.FC = () => {
-  const { userProfile } = useApp();
+  useApp();
   const [tasks, setTasks] = useState<Task[]>(() => {
     const saved = localStorage.getItem('opportunity_os_workspace_tasks');
     if (saved) return JSON.parse(saved);
