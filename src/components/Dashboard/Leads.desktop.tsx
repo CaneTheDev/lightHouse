@@ -1,11 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { Opportunity } from '../../context/AppContext';
 import { 
   Clipboard, Check, Plus, Trash2, 
   BookOpen, Sparkles, AlertCircle, Briefcase, Search, ArrowRight, RefreshCcw,
-  ExternalLink, Bookmark, BookmarkCheck
+  ExternalLink, Bookmark, BookmarkCheck, FileText, Paperclip, Loader2
 } from 'lucide-react';
+import { useCvExtractor } from '../Coach/useCvExtractor';
+import { LeadsCvUploadModal } from './LeadsCvUploadModal';
 
 interface CustomLead {
   id: string;
@@ -16,18 +18,26 @@ interface CustomLead {
 export const LeadsDesktop: React.FC = () => {
   const { 
     savedLeads, removeLead, saveLead,
-    runAnalysis, selectOpportunity, analysisResults
+    runAnalysis, selectOpportunity, analysisResults, discoveryComment
   } = useApp();
   
+  // CV Upload State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [cvText, setCvText] = useState('');
+  const [currentFile, setCurrentFile] = useState<{ name: string; type: string } | null>(null);
+  const { extractFromFile, isExtracting, progress } = useCvExtractor();
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
   // States for the new job discovery flow
-  const [step, setStep] = useState<'initial' | 'form' | 'results'>('initial');
+  const [step, setStep] = useState<'initial' | 'form' | 'cv_location' | 'results'>('initial');
   const [leadProfile, setLeadProfile] = useState({
     name: '',
     major: '',
     academicLevel: 'University',
     skills: '',
     interests: '',
-    location: ''
+    country: '',
+    state: ''
   });
   const [isSearching, setIsSearching] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
@@ -104,17 +114,44 @@ export const LeadsDesktop: React.FC = () => {
     }
   };
 
-  const handleFindJobs = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCurrentFile({ name: file.name, type: file.type });
+    setCvText('');
+    setIsModalOpen(true);
+
+    try {
+      const text = await extractFromFile(file);
+      setCvText(text);
+    } catch (err) {
+      console.error(err);
+    }
+
+    if (e.target) e.target.value = '';
+  };
+
+  const handleSendCvText = (text: string) => {
+    setCvText(text);
+    setIsModalOpen(false);
+    setStep('cv_location');
+  };
+
+  const triggerSearch = async (extractedCv: string, location: string) => {
     setIsSearching(true);
-    setExcludeUrls([]); // Reset exclusions for new search
+    setExcludeUrls([]);
+    setStep('results'); // Move to results view immediately to show loader
     
     try {
       const payload = {
         category: 'internship',
-        user_interest: leadProfile.interests,
+        user_interest: leadProfile.interests || 'relevant roles',
         academic_level: leadProfile.academicLevel,
-        location: leadProfile.location,
+        location: location,
+        major: leadProfile.major,
+        skills: leadProfile.skills ? leadProfile.skills.split(',').map(s => s.trim()) : [],
+        cv_text: extractedCv,
         exclude_urls: []
       };
 
@@ -139,41 +176,42 @@ export const LeadsDesktop: React.FC = () => {
 
       setFoundJobs(mapped);
       setExcludeUrls(mapped.map(j => j.url || '').filter(u => u !== ''));
-      setStep('results');
     } catch (err) {
       console.error('Discovery Error:', err);
+      // Fallback
       setFoundJobs([
         {
-          id: 'mock-1',
-          title: `Graduate ${leadProfile.interests} Role`,
-          organization: 'Global Tech Corp',
-          requirements: `Seeking a ${leadProfile.academicLevel} student with skills in ${leadProfile.skills}.`,
+          id: 'mock-cv-1',
+          title: "Extracted Role from CV",
+          organization: 'Matching Company',
+          requirements: "This role was found based on your uploaded CV background.",
           type: 'job',
-          url: 'https://example.com/1'
-        },
-        {
-          id: 'mock-2',
-          title: `Junior ${leadProfile.interests} position`,
-          organization: 'Innovation Labs',
-          requirements: `Great opportunity for someone located in ${leadProfile.location}.`,
-          type: 'job',
-          url: 'https://example.com/2'
+          url: '#'
         }
       ]);
-      setStep('results');
     } finally {
       setIsSearching(false);
     }
   };
 
+  const handleFindJobs = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const locationParts = [leadProfile.state, leadProfile.country].filter(Boolean);
+    const effectiveLocation = locationParts.length > 0 ? locationParts.join(', ') : 'Global Remote';
+    triggerSearch(cvText, effectiveLocation);
+  };
+
   const handleLoadMore = async () => {
     setIsLoadingMore(true);
     try {
+      const locationParts = [leadProfile.state, leadProfile.country].filter(Boolean);
+      const effectiveLocation = locationParts.length > 0 ? locationParts.join(', ') : 'Global Remote';
+
       const payload = {
         category: 'internship',
         user_interest: leadProfile.interests,
         academic_level: leadProfile.academicLevel,
-        location: leadProfile.location,
+        location: effectiveLocation,
         exclude_urls: excludeUrls
       };
 
@@ -233,7 +271,20 @@ export const LeadsDesktop: React.FC = () => {
         {step !== 'initial' && (
           <div style={{ display: 'flex', gap: '8px' }}>
             <button
-              onClick={() => setStep('initial')}
+              onClick={() => {
+                setCvText('');
+                setCurrentFile(null);
+                setLeadProfile({
+                  name: '',
+                  major: '',
+                  academicLevel: 'University',
+                  skills: '',
+                  interests: '',
+                  country: '',
+                  state: ''
+                });
+                setStep('initial');
+              }}
               className="btn-ghost"
               style={{ padding: '8px 14px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
@@ -326,19 +377,32 @@ export const LeadsDesktop: React.FC = () => {
               <p style={{ maxWidth: '500px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 Let our agents analyze your qualifications and find appropriate jobs tailored just for you. Get started by filling out your profile.
               </p>
-              <button 
-                onClick={() => setStep('form')}
-                className="btn-primary" 
-                style={{ padding: '14px 32px', fontSize: '16px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', marginTop: '10px' }}
-              >
-                Get Started <ArrowRight size={20} />
-              </button>
+              <div style={{ display: 'flex', gap: '16px', marginTop: '10px' }}>
+                <button 
+                  onClick={() => setStep('form')}
+                  className="btn-primary" 
+                  style={{ padding: '14px 32px', fontSize: '16px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px' }}
+                >
+                  Get Started <ArrowRight size={20} />
+                </button>
+                <button 
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="btn-ghost" 
+                  style={{ padding: '14px 32px', fontSize: '16px', borderRadius: '14px', display: 'flex', alignItems: 'center', gap: '10px', border: '1px dashed var(--primary)', background: 'var(--bg-tag)' }}
+                >
+                  <Paperclip size={20} /> Use CV Instead
+                </button>
+              </div>
             </div>
           )}
 
           {step === 'form' && (
             <div className="card fade-in-up" style={{ padding: '32px', maxWidth: '700px', margin: '0 auto' }}>
-              <h2 style={{ fontSize: '20px', fontWeight: 800, marginBottom: '24px' }}>What are you looking for?</h2>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px' }}>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>What are you looking for?</h2>
+              </div>
+
               <form onSubmit={handleFindJobs} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div>
@@ -367,33 +431,44 @@ export const LeadsDesktop: React.FC = () => {
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
                   <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Level</label>
-                    <select
-                      className="input-clean"
-                      value={leadProfile.academicLevel}
-                      onChange={e => setLeadProfile({...leadProfile, academicLevel: e.target.value})}
-                    >
-                      <option>High School</option>
-                      <option>University</option>
-                      <option>Graduate</option>
-                      <option>Professional</option>
-                    </select>
-                  </div>
-                  <div>
-                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Preferred Location</label>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
                     <input
                       type="text"
                       required
                       className="input-clean"
-                      placeholder="e.g. Remote, Lagos, London"
-                      value={leadProfile.location}
-                      onChange={e => setLeadProfile({...leadProfile, location: e.target.value})}
+                      placeholder="e.g. USA, UK, Nigeria"
+                      value={leadProfile.country}
+                      onChange={e => setLeadProfile({...leadProfile, country: e.target.value})}
+                    />
+                  </div>
+                  <div>
+                    <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>State / City (Optional)</label>
+                    <input
+                      type="text"
+                      className="input-clean"
+                      placeholder="e.g. Lagos, London, California"
+                      value={leadProfile.state}
+                      onChange={e => setLeadProfile({...leadProfile, state: e.target.value})}
                     />
                   </div>
                 </div>
 
                 <div>
-                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Core Skills (comma separated)</label>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Academic Level</label>
+                  <select
+                    className="input-clean"
+                    value={leadProfile.academicLevel}
+                    onChange={e => setLeadProfile({...leadProfile, academicLevel: e.target.value})}
+                  >
+                    <option>High School</option>
+                    <option>University</option>
+                    <option>Graduate</option>
+                    <option>Professional</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Core Skills</label>
                   <input
                     type="text"
                     required
@@ -428,14 +503,162 @@ export const LeadsDesktop: React.FC = () => {
             </div>
           )}
 
+          {step === 'cv_location' && (
+            <div className="card fade-in-up" style={{ padding: '32px', maxWidth: '500px', margin: '0 auto' }}>
+              <div style={{ textAlign: 'center', marginBottom: '24px' }}>
+                <div style={{
+                  width: '56px',
+                  height: '56px',
+                  borderRadius: '16px',
+                  background: 'rgba(99, 102, 241, 0.1)',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  margin: '0 auto 16px'
+                }}>
+                  <Sparkles size={26} color="var(--primary)" />
+                </div>
+                <h2 style={{ fontSize: '20px', fontWeight: 800, margin: '0 0 8px 0' }}>Where are you looking?</h2>
+                <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>
+                  CV parsed successfully! Please tell us your target country and state/city to locate the best opportunities.
+                </p>
+                {currentFile && (
+                  <div style={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    gap: '8px',
+                    marginTop: '16px',
+                    padding: '8px 12px',
+                    background: 'var(--bg-tag)',
+                    borderRadius: '8px',
+                    border: '1px solid var(--border-card)'
+                  }}>
+                    <FileText size={14} color="var(--primary)" />
+                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '200px' }}>
+                      {currentFile.name}
+                    </span>
+                    <button
+                      type="button"
+                      onClick={() => fileInputRef.current?.click()}
+                      style={{
+                        background: 'none',
+                        border: 'none',
+                        color: 'var(--primary)',
+                        fontSize: '11px',
+                        fontWeight: 700,
+                        cursor: 'pointer',
+                        padding: 0,
+                        marginLeft: '4px'
+                      }}
+                    >
+                      Change
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              <form onSubmit={handleFindJobs} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
+                  <input
+                    type="text"
+                    required
+                    className="input-clean"
+                    placeholder="e.g. USA, UK, Nigeria"
+                    value={leadProfile.country}
+                    onChange={e => setLeadProfile({...leadProfile, country: e.target.value})}
+                  />
+                </div>
+                <div>
+                  <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>State / City (Optional)</label>
+                  <input
+                    type="text"
+                    className="input-clean"
+                    placeholder="e.g. Lagos, London, California"
+                    value={leadProfile.state}
+                    onChange={e => setLeadProfile({...leadProfile, state: e.target.value})}
+                  />
+                </div>
+
+                <div style={{ display: 'flex', gap: '12px', marginTop: '10px' }}>
+                  <button 
+                    type="button" 
+                    onClick={() => setStep('initial')}
+                    className="btn-ghost"
+                    style={{ flex: 1, padding: '14px', borderRadius: '12px', fontSize: '15px' }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    type="submit" 
+                    disabled={isSearching}
+                    className="btn-primary" 
+                    style={{ flex: 2, padding: '14px', fontSize: '15px', borderRadius: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px' }}
+                  >
+                    {isSearching ? 'Analyzing Markets...' : <><Search size={18} /> Find Jobs</>}
+                  </button>
+                </div>
+              </form>
+            </div>
+          )}
+
           {step === 'results' && (
             <div className="fade-in">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
-                <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Tailored Opportunities for You</h2>
-                <button onClick={() => setStep('form')} className="btn-ghost" style={{ fontSize: '13px' }}>Edit Criteria</button>
-              </div>
+              {!isSearching && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, margin: 0 }}>Tailored Opportunities for You</h2>
+                  <button 
+                    onClick={() => setStep(cvText ? 'cv_location' : 'form')} 
+                    className="btn-ghost" 
+                    style={{ fontSize: '13px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                  >
+                    <Search size={14} /> Edit Criteria
+                  </button>
+                </div>
+              )}
+
+              {discoveryComment && (
+                <div className="fade-in-up" style={{ 
+                  marginBottom: '20px', 
+                  padding: '16px 20px', 
+                  background: 'var(--bg-tag)', 
+                  border: '1px solid var(--border-card)', 
+                  borderRadius: '14px',
+                  display: 'flex',
+                  alignItems: 'flex-start',
+                  gap: '12px'
+                }}>
+                  <div style={{ 
+                    width: '32px', 
+                    height: '32px', 
+                    borderRadius: '8px', 
+                    background: 'var(--bg-btn-dark)', 
+                    display: 'flex', 
+                    alignItems: 'center', 
+                    justifyContent: 'center', 
+                    flexShrink: 0,
+                    marginTop: '2px'
+                  }}>
+                    <Sparkles size={16} color="#fff" />
+                  </div>
+                  <div>
+                    <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>AI Overview</p>
+                    <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{discoveryComment}</p>
+                  </div>
+                </div>
+              )}
+
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {foundJobs.length > 0 ? foundJobs.map(job => (
+                {isSearching ? (
+                  <div className="card" style={{ padding: '80px 40px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
+                    <Loader2 size={48} className="animate-spin" style={{ color: 'var(--primary)' }} />
+                    <h3 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Finding Appropriate Jobs...</h3>
+                    <p style={{ fontSize: '14.5px', color: 'var(--text-secondary)', maxWidth: '450px', margin: '0 auto', lineHeight: 1.6 }}>
+                      Our AI agents are currently searching the internet and filtering the best opportunities based on your background. This may take a few moments.
+                    </p>
+                  </div>
+                ) : foundJobs.length > 0 ? foundJobs.map(job => (
                   <div key={job.id} className="card fade-in-up" style={{
                     padding: '20px 24px',
                     display: 'flex',
@@ -675,6 +898,28 @@ export const LeadsDesktop: React.FC = () => {
             ))}
           </div>
         </div>
+      )}
+
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="application/pdf,image/*"
+        style={{ display: 'none' }}
+      />
+
+      {/* CV Extraction Review Modal */}
+      {currentFile && (
+        <LeadsCvUploadModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          fileName={currentFile.name}
+          extractedText={cvText}
+          isExtracting={isExtracting}
+          progress={progress}
+          onConfirm={handleSendCvText}
+        />
       )}
     </div>
   );

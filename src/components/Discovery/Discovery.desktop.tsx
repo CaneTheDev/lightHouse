@@ -33,7 +33,7 @@ export const DiscoveryDesktop: React.FC = () => {
   const {
     runAnalysis, analysisResults, userProfile,
     selectedOpportunity, selectOpportunity,
-    saveLead, fetchLiveOpportunities
+    saveLead, fetchLiveOpportunities, discoveryComment
   } = useApp();
 
   const [activeCategory, setActiveCategory] = useState<string | null>(null);
@@ -424,6 +424,37 @@ export const DiscoveryDesktop: React.FC = () => {
             </button>
           </div>
         </div>
+
+        {discoveryComment && (
+          <div className="fade-in-up" style={{ 
+            marginBottom: '20px', 
+            padding: '16px 20px', 
+            background: 'var(--bg-tag)', 
+            border: '1px solid var(--border-card)', 
+            borderRadius: '14px',
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '12px'
+          }}>
+            <div style={{ 
+              width: '32px', 
+              height: '32px', 
+              borderRadius: '8px', 
+              background: 'var(--bg-btn-dark)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justifyContent: 'center', 
+              flexShrink: 0,
+              marginTop: '2px'
+            }}>
+              <Sparkles size={16} color="#fff" />
+            </div>
+            <div>
+              <p style={{ fontSize: '11px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', margin: '0 0 4px' }}>AI Insights</p>
+              <p style={{ fontSize: '13.5px', color: 'var(--text-secondary)', margin: 0, lineHeight: 1.5 }}>{discoveryComment}</p>
+            </div>
+          </div>
+        )}
 
         <div style={{ marginBottom: '24px' }}>
           <div className="discovery-search-bar">

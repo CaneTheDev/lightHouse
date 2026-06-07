@@ -2,9 +2,24 @@ import type React from 'react';
 import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
 import { useApp } from '../../context/AppContext';
 import type { ChatMessage } from '../../context/AppContext';
-import { Send, Terminal, ChevronDown, Sparkles, Bot, Compass, FileText, RotateCcw } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
-import remarkGfm from 'remark-gfm';
+import { Send, Terminal, ChevronDown, Sparkles, Bot, Compass, FileText, RotateCcw, Paperclip } from 'lucide-react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
+import { useCvExtractor } from './useCvExtractor';
+import { CvUploadModal } from './CvUploadModal';
+
+// Configure marked once — GFM on, links open in new tab
+const renderer = new marked.Renderer();
+renderer.link = ({ href, title, text }: { href: string; title?: string | null; text: string }) => {
+  const titleAttr = title ? ` title="${title}"` : '';
+  return `<a href="${href}"${titleAttr} target="_blank" rel="noopener noreferrer">${text}</a>`;
+};
+marked.setOptions({ gfm: true, breaks: true, renderer });
+
+function renderMarkdown(content: string): string {
+  const raw = marked.parse(content) as string;
+  return DOMPurify.sanitize(raw, { ADD_ATTR: ['target', 'rel'] });
+}
 
 function isLikelyCv(text: string): boolean {
   const lower = text.toLowerCase();
@@ -29,11 +44,46 @@ export const Coach: React.FC = () => {
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
   const [expandedReasoning, setExpandedReasoning] = useState<Record<number, boolean>>({});
+  const [showTip, setShowTip] = useState(true);
 
+  // CV Upload State
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [extractedText, setExtractedText] = useState('');
+  const [currentFile, setCurrentFile] = useState<{ name: string; type: string } | null>(null);
+  
+  const { extractFromFile, isExtracting, progress } = useCvExtractor();
+
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const oppId = useMemo(() => selectedOpportunity?.id || 'general', [selectedOpportunity?.id]);
   const history = useMemo(() => chatHistories[oppId] || [], [chatHistories, oppId]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setCurrentFile({ name: file.name, type: file.type });
+    setExtractedText('');
+    setIsModalOpen(true);
+
+    try {
+      const text = await extractFromFile(file);
+      setExtractedText(text);
+    } catch (err) {
+      // Error handled by hook, display message in modal or alert
+      console.error(err);
+    }
+
+    // Reset input so the same file can be selected again
+    if (e.target) {
+      e.target.value = '';
+    }
+  };
+
+  const triggerFileUpload = () => {
+    fileInputRef.current?.click();
+  };
 
   const clearChat = useCallback(() => {
     setChatHistories(prev => {
@@ -46,7 +96,16 @@ export const Coach: React.FC = () => {
   const isEmpty = history.length === 0;
   const hasSharedCv = useMemo(() => history.some(m => m.role === 'user' && (m.content.startsWith('[CV_UPLOAD]') || isLikelyCv(m.content))), [history]);
   const lastAiMsg = !isEmpty ? history.filter(m => m.role === 'assistant').pop()?.content || '' : '';
-  const showSuggestions = !isEmpty && !loading && history.length <= 4;
+  const showSuggestions = isEmpty && !loading;
+
+  useEffect(() => {
+    if (showTip) {
+      const timer = setTimeout(() => {
+        setShowTip(false);
+      }, 10000);
+      return () => clearTimeout(timer);
+    }
+  }, [showTip]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -130,6 +189,10 @@ export const Coach: React.FC = () => {
     sendMessage(input);
   }, [input, sendMessage]);
 
+  const handleSendCvText = (text: string) => {
+    sendMessage(text);
+  };
+
   const handleSuggestionClick = useCallback((suggestion: string) => {
     sendMessage(suggestion);
     setInput('');
@@ -147,11 +210,24 @@ export const Coach: React.FC = () => {
 
   return (
     <div className="coach-container">
-      <div className="coach-header">
-        <Bot size={20} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
-        <div>
-          <h2>AI Career Coach</h2>
+      <div className="coach-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <Bot size={20} style={{ color: 'var(--text-primary)', flexShrink: 0 }} />
+          <div>
+            <h2>AI Career Coach</h2>
+          </div>
         </div>
+        {!isEmpty && (
+          <button
+            type="button"
+            onClick={clearChat}
+            className="coach-refresh-btn"
+            title="Restart & clear conversation"
+            disabled={loading}
+          >
+            <RotateCcw size={15} />
+          </button>
+        )}
       </div>
 
       <div className="coach-messages">
@@ -172,7 +248,7 @@ export const Coach: React.FC = () => {
               Welcome, {userProfile.name}
             </h3>
             <p style={{ fontSize: '14px', color: 'var(--text-secondary)', lineHeight: 1.6, maxWidth: '400px', margin: 0 }}>
-              Paste your CV or resume text below so I can review your background and find the right opportunities for you.
+              Upload your CV (PDF or image) or paste the text below so I can review your background and find the right opportunities for you.
             </p>
           </div>
         )}
@@ -181,11 +257,8 @@ export const Coach: React.FC = () => {
           const isUser = msg.role === 'user';
           let displayContent = msg.content;
           
-          if (isUser && displayContent.startsWith('[CV_UPLOAD]')) {
-            const lines = displayContent.split('\n');
-            displayContent = lines.length > 3
-              ? `[CV pasted — ${lines.length} lines]`
-              : displayContent.replace('[CV_UPLOAD]', '[CV]:');
+          if (displayContent.startsWith('[CV_UPLOAD]')) {
+            displayContent = displayContent.replace('[CV_UPLOAD]', '').trim();
           }
 
           return (
@@ -194,16 +267,10 @@ export const Coach: React.FC = () => {
                 {isUser ? (
                   displayContent
                 ) : (
-                  <ReactMarkdown 
-                    remarkPlugins={[remarkGfm]}
-                    components={{
-                      a: ({ node, ...props }) => (
-                        <a {...props} target="_blank" rel="noopener noreferrer" />
-                      )
-                    }}
-                  >
-                    {displayContent}
-                  </ReactMarkdown>
+                  <div
+                    className="coach-md"
+                    dangerouslySetInnerHTML={{ __html: renderMarkdown(displayContent) }}
+                  />
                 )}
               </div>
 
@@ -269,28 +336,37 @@ export const Coach: React.FC = () => {
         </div>
       )}
 
-      {!isEmpty && !hasSharedCv && (
+      {showTip && !hasSharedCv && (
         <div className="coach-cv-note">
           <FileText size={14} />
           <span>Tip: Sharing your CV helps me find better job matches for you.</span>
         </div>
       )}
 
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFileChange}
+        accept="application/pdf,image/*"
+        style={{ display: 'none' }}
+      />
+
       <form onSubmit={handleSubmit} className="coach-input-area">
         <button 
           type="button"
-          onClick={clearChat}
+          onClick={triggerFileUpload}
           className="coach-upload-btn"
-          title="Clear chat history"
-          disabled={loading || isEmpty}
+          title="Upload CV (PDF or Image)"
+          disabled={loading}
         >
-          <RotateCcw size={16} />
+          <Paperclip size={16} />
         </button>
         <input
           ref={inputRef}
           id="coach-chat-input"
           type="text"
-          placeholder={isEmpty ? 'Paste your CV or resume text here...' : 'Type your message...'}
+          placeholder={isEmpty ? 'Paste or upload CV...' : 'Type your message...'}
           value={input}
           onChange={e => setInput(e.target.value)}
           disabled={loading}
@@ -305,6 +381,20 @@ export const Coach: React.FC = () => {
           <Send size={15} />
         </button>
       </form>
+
+      {/* CV Extraction Review Modal */}
+      {currentFile && (
+        <CvUploadModal
+          isOpen={isModalOpen}
+          onClose={() => setIsModalOpen(false)}
+          fileName={currentFile.name}
+          fileType={currentFile.type}
+          extractedText={extractedText}
+          isExtracting={isExtracting}
+          progress={progress}
+          onSend={handleSendCvText}
+        />
+      )}
     </div>
   );
 };

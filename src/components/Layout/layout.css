@@ -495,11 +495,17 @@
   min-height: 0;
 }
 
+@keyframes msg-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 .coach-message {
   display: flex;
   flex-direction: column;
   gap: 4px;
   max-width: 100%;
+  animation: msg-in 0.22s cubic-bezier(0.4, 0, 0.2, 1) both;
 }
 
 .coach-message.align-right {
@@ -511,70 +517,178 @@
 }
 
 .coach-bubble {
-  padding: 12px 16px;
+  padding: 14px 18px;
   font-size: 13.5px;
-  line-height: 1.55;
+  line-height: 1.65;
   word-break: break-word;
-  white-space: pre-wrap;
   max-width: 82%;
+  border-radius: 18px;
 }
 
 .coach-bubble.user {
   background: var(--bg-btn-dark);
   color: #ffffff;
-  border-radius: 16px 16px 2px 16px;
+  border-radius: 18px 18px 4px 18px;
+  white-space: pre-wrap;
 }
 
 .coach-bubble.ai {
   background: var(--bg-card);
   border: 1px solid var(--border-card);
   color: var(--text-primary);
-  border-radius: 16px 16px 16px 2px;
+  border-radius: 4px 18px 18px 18px;
+  max-width: 100%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
 }
 
-/* Markdown styling inside AI bubble */
-.coach-bubble.ai p {
-  margin: 0 0 8px 0;
+/* ── Markdown content wrapper ── */
+.coach-md {
+  /* reset any inherited white-space from parent */
+  white-space: normal;
 }
 
-.coach-bubble.ai p:last-child {
-  margin-bottom: 0;
+/* ── Paragraphs ── */
+.coach-bubble.ai .coach-md p {
+  margin: 0 0 10px 0;
+  line-height: 1.7;
+}
+.coach-bubble.ai .coach-md p:last-child { margin-bottom: 0; }
+
+/* ── Headings ── */
+.coach-bubble.ai .coach-md h1,
+.coach-bubble.ai .coach-md h2,
+.coach-bubble.ai .coach-md h3,
+.coach-bubble.ai .coach-md h4 {
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 16px 0 6px;
+  letter-spacing: -0.2px;
+  line-height: 1.3;
+}
+.coach-bubble.ai .coach-md h1 { font-size: 17px; margin-top: 0; }
+.coach-bubble.ai .coach-md h2 { font-size: 15px; }
+.coach-bubble.ai .coach-md h3 { font-size: 13.5px; }
+.coach-bubble.ai .coach-md h4 { font-size: 12.5px; color: var(--text-secondary); }
+
+/* ── Lists ── */
+.coach-bubble.ai .coach-md ul,
+.coach-bubble.ai .coach-md ol {
+  margin: 8px 0 10px;
+  padding-left: 22px;
+}
+.coach-bubble.ai .coach-md li {
+  margin-bottom: 5px;
+  line-height: 1.65;
+}
+.coach-bubble.ai .coach-md li::marker {
+  color: var(--primary);
+}
+.coach-bubble.ai .coach-md ul > li::marker {
+  font-size: 1.1em;
 }
 
-.coach-bubble.ai ul, .coach-bubble.ai ol {
-  margin: 8px 0;
-  padding-left: 20px;
+/* ── Strong / Em ── */
+.coach-bubble.ai .coach-md strong { font-weight: 700; color: var(--text-primary); }
+.coach-bubble.ai .coach-md em { font-style: italic; color: var(--text-secondary); }
+
+/* ── Inline code ── */
+.coach-bubble.ai .coach-md code {
+  background: #f0f0f4;
+  border: 1px solid rgba(0,0,0,0.07);
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 0.875em;
+  color: #5a30b5;
 }
 
-.coach-bubble.ai li {
-  margin-bottom: 4px;
+/* ── Code blocks ── */
+.coach-bubble.ai .coach-md pre {
+  background: #1a1a2e;
+  color: #e8e8f0;
+  padding: 14px 16px;
+  border-radius: 10px;
+  overflow-x: auto;
+  margin: 12px 0;
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+.coach-bubble.ai .coach-md pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: inherit;
+  font-size: inherit;
 }
 
-.coach-bubble.ai a {
+/* ── Blockquote ── */
+.coach-bubble.ai .coach-md blockquote {
+  border-left: 3px solid var(--primary);
+  margin: 10px 0;
+  padding: 8px 14px;
+  background: rgba(99,102,241,0.05);
+  border-radius: 0 8px 8px 0;
+  color: var(--text-secondary);
+  font-style: italic;
+}
+.coach-bubble.ai .coach-md blockquote p { margin: 0; }
+
+/* ── Horizontal rule ── */
+.coach-bubble.ai .coach-md hr {
+  border: none;
+  border-top: 1px solid var(--border-card);
+  margin: 14px 0;
+}
+
+/* ── Links ── */
+.coach-bubble.ai .coach-md a {
   color: #6366f1;
   text-decoration: underline;
   text-underline-offset: 2px;
+  text-decoration-thickness: 1px;
   font-weight: 500;
+  transition: color 0.15s ease;
+  word-break: break-all;
 }
+.coach-bubble.ai .coach-md a:hover { color: #4f46e5; text-decoration-thickness: 2px; }
 
-.coach-bubble.ai a:hover {
-  color: #4f46e5;
-}
-
-.coach-bubble.ai code {
-  background: var(--bg-tag);
-  padding: 2px 4px;
-  border-radius: 4px;
-  font-family: ui-monospace, monospace;
-  font-size: 0.9em;
-}
-
-.coach-bubble.ai pre {
-  background: var(--bg-input);
-  padding: 12px;
-  border-radius: 8px;
+/* ── Tables ── */
+.coach-bubble.ai .coach-md table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 12.5px;
+  margin: 12px 0;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+  display: block;
   overflow-x: auto;
-  margin: 8px 0;
+  -webkit-overflow-scrolling: touch;
+}
+.coach-bubble.ai .coach-md thead {
+  background: var(--bg-tag);
+}
+.coach-bubble.ai .coach-md th {
+  padding: 9px 13px;
+  font-weight: 600;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  color: var(--text-secondary);
+  text-align: left;
+  border-bottom: 1px solid var(--border-card);
+  white-space: nowrap;
+}
+.coach-bubble.ai .coach-md td {
+  padding: 9px 13px;
+  border-bottom: 1px solid var(--border-subtle);
+  vertical-align: top;
+  line-height: 1.5;
+}
+.coach-bubble.ai .coach-md tr:last-child td { border-bottom: none; }
+.coach-bubble.ai .coach-md tbody tr:nth-child(even) td { background: #fafafa; }
+.coach-bubble.ai .coach-md tbody tr:hover td {
+  background: rgba(99,102,241,0.04);
 }
 
 .coach-bubble.loading {
@@ -739,6 +853,20 @@
   .coach-input-area {
     padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
   }
+
+  /* Prevent iOS Safari zooming on focus globally by setting all inputs to 16px */
+  input[type="text"],
+  input[type="number"],
+  input[type="email"],
+  input[type="password"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  input:not([type]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
 }
 
 /* ─── Score gauge row ─── */
@@ -754,5 +882,230 @@
     flex-direction: column;
     align-items: flex-start;
     gap: 16px;
+  }
+}
+
+/* ─── CV Extraction Review Modal ─── */
+.cv-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 999;
+  animation: fade-in-overlay 0.2s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes fade-in-overlay {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cv-modal {
+  width: 90%;
+  max-width: 650px;
+  background: #ffffff;
+  border-radius: 20px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+  border: 1px solid var(--border-card);
+  display: flex;
+  flex-direction: column;
+  max-height: 85vh;
+  animation: slide-up-modal 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+@keyframes slide-up-modal {
+  from { transform: translateY(30px) scale(0.95); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.cv-modal-header {
+  padding: 18px 24px;
+  border-bottom: 1px solid var(--border-card);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.cv-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.cv-file-icon-badge {
+  width: 38px;
+  height: 38px;
+  border-radius: 10px;
+  background: rgba(99, 102, 241, 0.08);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cv-modal-title h3 {
+  margin: 0;
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.cv-modal-subtitle {
+  margin: 2px 0 0 0;
+  font-size: 11.5px;
+  color: var(--text-secondary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 320px;
+}
+
+.cv-modal-close {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.15s ease;
+}
+
+.cv-modal-close:hover {
+  background: var(--bg-tag);
+  color: var(--text-primary);
+}
+
+.cv-modal-body {
+  padding: 24px;
+  flex: 1;
+  overflow-y: auto;
+  min-height: 250px;
+  display: flex;
+  flex-direction: column;
+}
+
+.cv-extracting-state {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 20px 0;
+}
+
+.cv-extracting-state h4 {
+  margin: 0 0 6px 0;
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.cv-extracting-state p {
+  margin: 0 0 20px 0;
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.cv-modal-loading-note {
+  font-size: 11px;
+  color: var(--text-muted);
+  max-width: 320px;
+  line-height: 1.5;
+}
+
+/* ── Progress Bar ── */
+.cv-progress-container {
+  width: 100%;
+  max-width: 300px;
+  margin-bottom: 16px;
+}
+
+.cv-progress-bar-bg {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-input);
+  border-radius: 100px;
+  overflow: hidden;
+  border: 1px solid var(--border-card);
+}
+
+.cv-progress-bar-fill {
+  height: 100%;
+  background: var(--primary);
+  border-radius: 100px;
+  transition: width 0.3s ease;
+}
+
+/* ── Warning Badges ── */
+.cv-accuracy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
+  background: #fffbeb;
+  border: 1px solid #fef3c7;
+  border-radius: 10px;
+  margin-bottom: 16px;
+  font-size: 12px;
+  color: #b45309;
+  line-height: 1.5;
+}
+
+.cv-accuracy-note svg {
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.cv-textarea-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 200px;
+}
+
+.cv-modal-preview {
+  flex: 1;
+  width: 100%;
+  min-height: 250px;
+  padding: 14px;
+  background: var(--bg-input);
+  border: 1px solid var(--border-input);
+  border-radius: 12px;
+  font-family: ui-monospace, 'Cascadia Code', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--text-primary);
+  resize: none;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+.cv-modal-preview:focus {
+  border-color: rgba(99, 102, 241, 0.4);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.08);
+}
+
+.cv-modal-footer {
+  padding: 16px 24px;
+  border-top: 1px solid var(--border-card);
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 768px) {
+  .cv-modal {
+    width: 100%;
+    height: 100%;
+    max-height: 100%;
+    border-radius: 0;
+    border: none;
   }
 }

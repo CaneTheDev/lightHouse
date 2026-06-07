@@ -84,6 +84,7 @@ interface AppContextType {
   chatHistories: Record<string, ChatMessage[]>;
   savedLeads: SavedLead[];
   loadingStatus: string;
+  discoveryComment: string | null;
   fetchLiveOpportunities: (category: string, interest: string, excludeUrls?: string[]) => Promise<Opportunity[]>;
   login: (email: string, password: string) => { success: boolean; message?: string };
   signup: (email: string, password: string) => { success: boolean; message?: string };
@@ -164,6 +165,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [discoveryComment, setDiscoveryComment] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string>('Initializing Agents...');
   const analysisIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -315,6 +317,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       user_interest: interest,
       academic_level: userProfile.academicLevel,
       location: userProfile.location,
+      major: userProfile.major,
+      skills: userProfile.skills,
       exclude_urls: excludeUrls
     });
 
@@ -322,6 +326,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       discoveryAbortControllerRef.current.abort();
     }
     discoveryAbortControllerRef.current = new AbortController();
+    setDiscoveryComment(null); // Reset comment on new search
 
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
@@ -336,6 +341,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           user_interest: interest,
           academic_level: userProfile.academicLevel,
           location: userProfile.location,
+          major: userProfile.major,
+          skills: userProfile.skills,
           exclude_urls: excludeUrls
         })
       });
@@ -343,6 +350,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (!response.ok) throw new Error('Discovery failed');
       const data = await response.json();
       
+      if (data.ai_comment) {
+        setDiscoveryComment(data.ai_comment);
+      }
+
       // Map DiscoveryOpportunity to Opportunity interface
       const mapped: Opportunity[] = data.opportunities.map((opp: any, idx: number) => ({
         id: `live-${Date.now()}-${idx}`,
@@ -502,6 +513,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       chatHistories,
       savedLeads,
       loadingStatus,
+      discoveryComment,
       login,
       signup,
       logout,
