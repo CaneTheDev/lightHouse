@@ -43,14 +43,14 @@ const TEAM = [
   },
   {
     name: 'AbdulRahman Farri',
-    role: 'Front-end Developer',
+    role: 'Product Manager',
     github: 'abdulrahmanfarri-cpu',
     initials: 'AF',
     color: '#10b981',
   },
   {
     name: 'Usman Mubarak Oladimeji',
-    role: 'Product Manager',
+    role: 'Front-end Developer',
     github: 'mubus133',
     initials: 'UO',
     color: '#f59e0b',
