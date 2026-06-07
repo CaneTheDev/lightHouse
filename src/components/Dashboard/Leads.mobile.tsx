@@ -267,9 +267,7 @@ export const LeadsMobile: React.FC = () => {
         <div className="fade-in">
           {step === 'initial' && (
             <div className="card" style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-              <div style={{ background: 'var(--bg-input)', padding: '16px', borderRadius: '50%' }}>
-                <Briefcase size={36} color="var(--primary)" />
-              </div>
+              <Briefcase size={48} color="var(--primary)" style={{ marginBottom: '8px' }} />
               <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Find Your Perfect Job</h2>
               <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5, fontSize: '14px' }}>
                 Let our AI agents find appropriate jobs tailored just for you based on your profile.

@@ -311,9 +311,7 @@ export const LeadsDesktop: React.FC = () => {
         <div className="fade-in">
           {step === 'initial' && (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-              <div style={{ background: 'var(--bg-input)', padding: '20px', borderRadius: '50%', marginBottom: '10px' }}>
-                <Briefcase size={48} color="var(--primary)" />
-              </div>
+              <Briefcase size={64} color="var(--primary)" style={{ marginBottom: '10px' }} />
               <h2 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Find Your Perfect Job</h2>
               <p style={{ maxWidth: '500px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 Let our agents analyze your qualifications and find appropriate jobs tailored just for you. Get started by filling out your profile.
