@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { useApp } from '../../context/AppContext';
 import {
-  Search, BarChart2, Users, MessageSquare,
-  ArrowRight, Zap, ShieldCheck, Compass,
-  GraduationCap, Globe, ChevronDown
+  BarChart2, Users, MessageSquare,
+  ArrowRight, ShieldCheck, Compass,
+  Globe, ChevronDown,
+  GraduationCap, RefreshCw, TrendingUp, Bookmark
 } from 'lucide-react';
 import './Landing.css';
 
@@ -99,12 +100,12 @@ const FEATURES = [
       'A persistent chatbot with awareness of your full profile and current opportunity. It can search the live web inside the chat to fetch fresh job links and interview tips.',
   },
   {
-    icon: <Zap size={22} />,
+    icon: <Bookmark size={22} />,
     color: '#8b5cf6',
     bg: 'rgba(139,92,246,0.1)',
-    title: 'Resilient Infrastructure',
+    title: 'Saved Opportunities Library',
     desc:
-      'Cerebras key rotation detects rate-limits and switches keys automatically. OpenRouter acts as a failover. The frontend degrades gracefully if the backend is offline.',
+      'Bookmark promising opportunities as you discover them. Your saved list persists across sessions so you can revisit and compare later.',
   },
 ];
 
@@ -191,6 +192,7 @@ const Landing: React.FC = () => {
           <div className="landing-nav-links">
             <a href="#features" className="landing-nav-link">Features</a>
             <a href="#how-it-works" className="landing-nav-link">How It Works</a>
+            <a href="#audience" className="landing-nav-link">Who It's For</a>
             <a href="#team" className="landing-nav-link">Team</a>
             <a
               href="https://github.com/CaneTheDev/lightHouse"
@@ -290,7 +292,7 @@ const Landing: React.FC = () => {
           <div className="landing-section-header">
             <h2 className="landing-section-title">Everything You Need to Land Your Dream Role</h2>
             <p className="landing-section-sub">
-              Six intelligent capabilities working together to automate the tedious parts of
+              Five intelligent capabilities working together to automate the tedious parts of
               your career journey.
             </p>
           </div>
@@ -339,60 +341,59 @@ const Landing: React.FC = () => {
         </div>
       </section>
 
-      {/* ══════════════ AGENT ARCHITECTURE CALLOUT ══════════════ */}
-      <section className="landing-section" id="architecture">
+
+
+      {/* ══════════════ WHO THIS IS FOR ══════════════ */}
+      <section className="landing-section" id="audience">
         <div className="landing-section-inner">
-          <div className="landing-arch-card">
-            <div className="landing-arch-left">
-              <span className="landing-badge landing-badge--dark">
-                <Zap size={12} /> &nbsp;Under the Hood
-              </span>
-              <h2 className="landing-arch-title">
-                Resilient Multi-Agent Infrastructure
-              </h2>
-              <p className="landing-arch-desc">
-                The backend uses <strong>Cerebras key rotation</strong>  on every request it picks the
-                best available key and automatically falls back on 429 errors. If Cerebras
-                is exhausted, <strong>OpenRouter</strong> seamlessly takes over. On the frontend,
-                the state manager simulates results locally when the backend is unreachable,
-                so you always get a response.
-              </p>
-              <ul className="landing-arch-list">
-                <li>
-                  <Search size={14} />
-                  Tavily Live Web Search  real-time listings &amp; LinkedIn/GitHub scraping
-                </li>
-                <li>
-                  <BarChart2 size={14} />
-                  Dual-branch concurrent eligibility + networking agent
-                </li>
-                <li>
-                  <GraduationCap size={14} />
-                  Stateful career coach with tool-calling (web search inside chat)
-                </li>
-                <li>
-                  <ShieldCheck size={14} />
-                  PDF.js + Tesseract.js in-browser OCR  zero uploads
-                </li>
-              </ul>
-            </div>
-            <div className="landing-arch-right">
-              <div className="landing-agent-diagram">
-                {[
-                  { label: 'Discovery Agent', sub: 'Tavily Search', color: '#6366f1' },
-                  { label: 'Eligibility Agent', sub: 'Match Score 0–100', color: '#0ea5e9' },
-                  { label: 'Networking Agent', sub: 'LinkedIn · GitHub', color: '#10b981' },
-                  { label: 'Career Coach', sub: 'Stateful Chat + Tools', color: '#f59e0b' },
-                ].map((a, i) => (
-                  <div key={i} className="landing-agent-node" style={{ borderColor: a.color + '40' }}>
-                    <div className="landing-agent-dot" style={{ background: a.color }} />
-                    <div>
-                      <div className="landing-agent-label">{a.label}</div>
-                      <div className="landing-agent-sub">{a.sub}</div>
-                    </div>
-                  </div>
-                ))}
+          <div className="landing-section-header">
+            <h2 className="landing-section-title">Who This Is For</h2>
+            <p className="landing-section-sub">
+              Whether you are hunting for your first break or pivoting into something new,
+              OpportunityOS meets you where you are.
+            </p>
+          </div>
+
+          <div className="landing-audience-grid">
+            <div className="landing-audience-card">
+              <div className="landing-feature-icon" style={{ background: 'rgba(99,102,241,0.1)', color: '#6366f1' }}>
+                <GraduationCap size={22} />
               </div>
+              <h3 className="landing-audience-card-title">Students &amp; Grads</h3>
+              <p className="landing-audience-card-desc">
+                Find scholarships, fellowships, and internships matched to your major and
+                skills  no more scrolling through spreadsheets.
+              </p>
+            </div>
+            <div className="landing-audience-card">
+              <div className="landing-feature-icon" style={{ background: 'rgba(236,72,153,0.1)', color: '#ec4899' }}>
+                <RefreshCw size={22} />
+              </div>
+              <h3 className="landing-audience-card-title">Career Switchers</h3>
+              <p className="landing-audience-card-desc">
+                Discover entry points into your target industry and get warm introductions
+                to insiders who can open doors.
+              </p>
+            </div>
+            <div className="landing-audience-card">
+              <div className="landing-feature-icon" style={{ background: 'rgba(16,185,129,0.1)', color: '#10b981' }}>
+                <TrendingUp size={22} />
+              </div>
+              <h3 className="landing-audience-card-title">Early-Career Pros</h3>
+              <p className="landing-audience-card-desc">
+                Skip the cold application queue. Let our dual AI analyse your fit and
+                generate personalised outreach for real connections.
+              </p>
+            </div>
+            <div className="landing-audience-card">
+              <div className="landing-feature-icon" style={{ background: 'rgba(14,165,233,0.1)', color: '#0ea5e9' }}>
+                <Globe size={22} />
+              </div>
+              <h3 className="landing-audience-card-title">Global Seekers</h3>
+              <p className="landing-audience-card-desc">
+                Search across countries and continents without location bias. Your
+                opportunity is out there  we help you find it.
+              </p>
             </div>
           </div>
         </div>

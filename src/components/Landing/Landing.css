@@ -477,7 +477,51 @@
 }
 
 /* ════════════════════════════════════════
-   ARCHITECTURE CARD
+   WHO THIS IS FOR
+════════════════════════════════════════ */
+.landing-audience-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.landing-audience-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-card);
+  border-radius: 20px;
+  padding: 28px 22px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.landing-audience-card:hover {
+  box-shadow: 0 8px 32px rgba(0,0,0,0.08);
+  transform: translateY(-2px);
+  border-color: rgba(0,0,0,0.12);
+}
+
+.landing-audience-emoji {
+  font-size: 28px;
+  line-height: 1;
+  margin-bottom: 14px;
+  display: block;
+}
+
+.landing-audience-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px;
+}
+
+.landing-audience-card-desc {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.6;
+  margin: 0;
+}
+
+/* ════════════════════════════════════════
+   ARCHITECTURE CARD (deprecated – kept for safety)
 ════════════════════════════════════════ */
 .landing-arch-card {
   display: grid;
@@ -791,6 +835,10 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
+  .landing-audience-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
   .landing-team-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -841,6 +889,10 @@
   }
 
   .landing-features-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-audience-grid {
     grid-template-columns: 1fr;
   }
 
