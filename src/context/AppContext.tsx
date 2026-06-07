@@ -64,8 +64,9 @@ export interface LocalAccount {
   password: string;
 }
 
-// ─── 7 core views + loader + onboarding ───────────────────────────────────────
+// ─── 8 core views + loader + onboarding + landing ────────────────────────────
 export type ActiveView =
+  | 'landing'
   | 'login'
   | 'onboarding'
   | 'dashboard'
@@ -136,7 +137,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [activeView, setView] = useState<ActiveView>(() => {
     const savedUser = localStorage.getItem('opportunity_os_user');
     const savedProfile = localStorage.getItem('opportunity_os_profile');
-    if (!savedUser) return 'login';
+    if (!savedUser) return 'landing';
     if (!savedProfile) return 'onboarding';
     return 'dashboard';
   });

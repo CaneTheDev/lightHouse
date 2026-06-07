@@ -11,6 +11,7 @@ import Dashboard from './components/Dashboard/Dashboard';
 import Coach from './components/Coach/Coach';
 import Leads from './components/Dashboard/Leads';
 import MatchStrategy from './components/Dashboard/MatchStrategy';
+import Landing from './components/Landing/Landing';
 
 const AppContent: React.FC = () => {
   const { activeView } = useApp();
@@ -18,6 +19,10 @@ const AppContent: React.FC = () => {
   return (
     <>
       {(() => {
+        if (activeView === 'landing') {
+          return <Landing />;
+        }
+
         if (activeView === 'login') {
           return <Login />;
         }
