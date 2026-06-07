@@ -239,7 +239,7 @@ const Landing: React.FC = () => {
               className="btn-primary landing-hero-btn-primary"
               onClick={() => setView('login')}
             >
-              Get Started Free <ArrowRight size={16} />
+              Get Started  <ArrowRight size={16} />
             </button>
             <a
               href="https://github.com/CaneTheDev/lightHouse"
