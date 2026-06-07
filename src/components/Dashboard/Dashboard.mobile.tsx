@@ -9,7 +9,7 @@ import './Dashboard.mobile.css';
 export const DashboardMobile: React.FC = () => {
   const { 
     analysisResults, opportunities, userProfile, setView, 
-    selectOpportunity, runAnalysis, savedLeads
+    selectOpportunity, runAnalysis, savedLeads, setActiveCategory
   } = useApp();
 
   // Hub Data Calculations
@@ -166,6 +166,7 @@ export const DashboardMobile: React.FC = () => {
                       <button
                         onClick={() => {
                           selectOpportunity(opp);
+                          if (opp.type) setActiveCategory(opp.type);
                           setView('discovery');
                         }}
                         className="btn-ghost"
@@ -213,6 +214,7 @@ export const DashboardMobile: React.FC = () => {
                 <button
                   onClick={async () => {
                     selectOpportunity(opp);
+                    if (opp.type) setActiveCategory(opp.type);
                     await runAnalysis(opp);
                   }}
                   className="btn-primary"
