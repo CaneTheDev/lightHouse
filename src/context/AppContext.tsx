@@ -85,6 +85,10 @@ interface AppContextType {
   savedLeads: SavedLead[];
   loadingStatus: string;
   discoveryComment: string | null;
+  activeCategory: string | null;
+  setActiveCategory: (category: string | null) => void;
+  liveResults: Record<string, Opportunity[]>;
+  setLiveResults: React.Dispatch<React.SetStateAction<Record<string, Opportunity[]>>>;
   fetchLiveOpportunities: (category: string, interest: string, excludeUrls?: string[]) => Promise<Opportunity[]>;
   login: (email: string, password: string) => { success: boolean; message?: string };
   signup: (email: string, password: string) => { success: boolean; message?: string };
@@ -165,6 +169,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return saved ? JSON.parse(saved) : [];
   });
 
+  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [liveResults, setLiveResults] = useState<Record<string, Opportunity[]>>({});
   const [discoveryComment, setDiscoveryComment] = useState<string | null>(null);
   const [loadingStatus, setLoadingStatus] = useState<string>('Initializing Agents...');
   const analysisIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -229,6 +235,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const logout = () => {
     setCurrentUser(null);
+    setActiveCategory(null);
+    setLiveResults({});
     localStorage.removeItem('opportunity_os_user');
     setView('login');
   };
@@ -242,6 +250,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const resetProfile = () => {
     setUserProfile(null);
     setSelectedOpportunity(null);
+    setActiveCategory(null);
+    setLiveResults({});
     setAnalysisResults({});
     setChatHistories({});
     setSavedLeads([]);
@@ -514,6 +524,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       savedLeads,
       loadingStatus,
       discoveryComment,
+      activeCategory,
+      setActiveCategory,
+      liveResults,
+      setLiveResults,
       login,
       signup,
       logout,

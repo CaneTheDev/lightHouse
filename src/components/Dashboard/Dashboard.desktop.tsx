@@ -9,7 +9,7 @@ import './Dashboard.css';
 export const DashboardDesktop: React.FC = () => {
   const { 
     analysisResults, opportunities, userProfile, setView, 
-    selectOpportunity, runAnalysis, savedLeads
+    selectOpportunity, runAnalysis, savedLeads, setActiveCategory
   } = useApp();
 
   // Hub Data Calculations
@@ -180,6 +180,7 @@ export const DashboardDesktop: React.FC = () => {
                         <button
                           onClick={() => {
                             selectOpportunity(opp);
+                            if (opp.type) setActiveCategory(opp.type);
                             setView('discovery');
                           }}
                           className="btn-ghost"
@@ -230,6 +231,7 @@ export const DashboardDesktop: React.FC = () => {
                   <button
                     onClick={async () => {
                       selectOpportunity(opp);
+                      if (opp.type) setActiveCategory(opp.type);
                       await runAnalysis(opp);
                     }}
                     className="btn-primary"

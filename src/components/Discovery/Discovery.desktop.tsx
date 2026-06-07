@@ -33,12 +33,12 @@ export const DiscoveryDesktop: React.FC = () => {
   const {
     runAnalysis, analysisResults, userProfile,
     selectedOpportunity, selectOpportunity,
-    saveLead, fetchLiveOpportunities, discoveryComment
+    saveLead, fetchLiveOpportunities, discoveryComment,
+    activeCategory, setActiveCategory,
+    liveResults, setLiveResults
   } = useApp();
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
   const [search, setSearch] = useState('');
-  const [liveResults, setLiveResults] = useState<Record<string, Opportunity[]>>({});
   const [isDiscovering, setIsDiscovering] = useState(false);
   const [networkTab, setNetworkTab] = useState<'mentors' | 'communities'>('mentors');
   const [checkedRoadmap, setCheckedRoadmap] = useState<Record<number, boolean>>({});
