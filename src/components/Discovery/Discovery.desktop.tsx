@@ -5,7 +5,7 @@ import {
   Search, ArrowLeft, CheckSquare, Square, Clipboard, Check,
   ExternalLink, Terminal, ChevronDown, ChevronUp,
   UserCheck, Bookmark, BookmarkCheck, CheckCircle2, RefreshCw,
-  Briefcase, GraduationCap, Award, Users, Handshake
+  Briefcase, GraduationCap, Award, Users, Handshake, Sparkles
 } from 'lucide-react';
 import './Discovery.css';
 
@@ -123,6 +123,21 @@ export const DiscoveryDesktop: React.FC = () => {
     if (activeCategory) {
       await performDiscovery(activeCategory);
     }
+  };
+
+  const handleSaveJob = (job: Opportunity) => {
+    if (savedStates[job.id]) return;
+    
+    const leadDetails = {
+      name: job.organization,
+      source: 'web_search',
+      profile_url: job.url || '', 
+      snippet: job.requirements,
+      suggested_message: `Interested in the ${job.title} role at ${job.organization}. \n\nDetails: ${job.requirements.split('\n\n')[0]}`
+    };
+    
+    saveLead(leadDetails as any, job.title);
+    setSavedStates(prev => ({ ...prev, [job.id]: true }));
   };
 
   const handleSave = (contact: any, idx: number) => {
@@ -479,10 +494,21 @@ export const DiscoveryDesktop: React.FC = () => {
                 <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                   {opp.url && (
                     <a href={opp.url} target="_blank" rel="noopener noreferrer" className="btn-ghost"
-                      style={{ padding: '8px 14px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', borderRadius: '10px' }}>
-                      <ExternalLink size={13} /> Visit
+                      style={{ padding: '8px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', borderRadius: '10px', opacity: 0.7 }}>
+                      <ExternalLink size={12} /> Apply
                     </a>
                   )}
+                  
+                  <button 
+                    onClick={() => handleSaveJob(opp)} 
+                    disabled={!!savedStates[opp.id]}
+                    className="btn-ghost"
+                    style={{ padding: '8px 14px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
+                  >
+                    {savedStates[opp.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                    {savedStates[opp.id] ? 'Saved' : 'Save'}
+                  </button>
+
                   {isAnalyzed ? (
                     <>
                       <button onClick={() => selectOpportunity(opp)} className="btn-primary"
@@ -492,8 +518,10 @@ export const DiscoveryDesktop: React.FC = () => {
                     </>
                   ) : (
                     <button onClick={() => handleAnalyze(opp)} className="btn-primary"
-                      style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px' }}
-                      title="Analyze Fit">Analyze</button>
+                      style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                      title="Analyze Fit">
+                      <Sparkles size={14} /> Analyze
+                    </button>
                   )}
                   {isAnalyzed && (
                     <span style={{ display: 'inline-flex', alignItems: 'center', gap: '3px', fontSize: '11px', fontWeight: 600, color: '#16a34a', background: '#dcfce7', padding: '4px 8px', borderRadius: '100px', whiteSpace: 'nowrap' }}>

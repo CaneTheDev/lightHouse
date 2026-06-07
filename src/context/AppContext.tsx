@@ -1,5 +1,5 @@
 import type React from 'react';
-import { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useState, useRef, useEffect } from 'react';
 
 export interface UserProfile {
   name: string;
@@ -57,6 +57,11 @@ export interface ChatMessage {
   reasoning_details?: any;
 }
 
+export interface LocalAccount {
+  email: string;
+  password: string;
+}
+
 // ─── 7 core views + loader + onboarding ───────────────────────────────────────
 export type ActiveView =
   | 'login'
@@ -80,8 +85,8 @@ interface AppContextType {
   savedLeads: SavedLead[];
   loadingStatus: string;
   fetchLiveOpportunities: (category: string, interest: string, excludeUrls?: string[]) => Promise<Opportunity[]>;
-  login: (email: string) => void;
-  signup: (email: string) => void;
+  login: (email: string, password: string) => { success: boolean; message?: string };
+  signup: (email: string, password: string) => { success: boolean; message?: string };
   logout: () => void;
   saveProfile: (profile: UserProfile) => void;
   selectOpportunity: (opp: Opportunity | null) => void;
@@ -97,6 +102,11 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [accounts, setAccounts] = useState<LocalAccount[]>(() => {
+    const saved = localStorage.getItem('opportunity_os_accounts');
+    return saved ? JSON.parse(saved) : [];
+  });
+
   const [currentUser, setCurrentUser] = useState<{ email: string } | null>(() => {
     const saved = localStorage.getItem('opportunity_os_user');
     return saved ? JSON.parse(saved) : null;
@@ -155,23 +165,64 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   });
 
   const [loadingStatus, setLoadingStatus] = useState<string>('Initializing Agents...');
+  const analysisIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const discoveryAbortControllerRef = useRef<AbortController | null>(null);
 
-  const login = (email: string) => {
-    const user = { email };
+  useEffect(() => {
+    // Cleanup interval on unmount
+    return () => {
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+      }
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+      if (discoveryAbortControllerRef.current) {
+        discoveryAbortControllerRef.current.abort();
+      }
+    };
+  }, []);
+
+  const login = (email: string, password: string): { success: boolean; message?: string } => {
+    const account = accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
+    
+    if (!account) {
+      return { success: false, message: "Account not found. Please sign up." };
+    }
+
+    if (account.password !== password) {
+      return { success: false, message: "Invalid password." };
+    }
+
+    const user = { email: account.email };
     setCurrentUser(user);
     localStorage.setItem('opportunity_os_user', JSON.stringify(user));
+    
     if (localStorage.getItem('opportunity_os_profile')) {
       setView('dashboard');
     } else {
       setView('onboarding');
     }
+    return { success: true };
   };
 
-  const signup = (email: string) => {
+  const signup = (email: string, password: string): { success: boolean; message?: string } => {
+    const existing = accounts.find(a => a.email.toLowerCase() === email.toLowerCase());
+    if (existing) {
+      return { success: false, message: "Account already exists. Please sign in." };
+    }
+
+    const newAccount = { email, password };
+    const updatedAccounts = [...accounts, newAccount];
+    setAccounts(updatedAccounts);
+    localStorage.setItem('opportunity_os_accounts', JSON.stringify(updatedAccounts));
+
     const user = { email };
     setCurrentUser(user);
     localStorage.setItem('opportunity_os_user', JSON.stringify(user));
     setView('onboarding');
+    return { success: true };
   };
 
   const logout = () => {
@@ -267,6 +318,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       exclude_urls: excludeUrls
     });
 
+    if (discoveryAbortControllerRef.current) {
+      discoveryAbortControllerRef.current.abort();
+    }
+    discoveryAbortControllerRef.current = new AbortController();
+
     try {
       const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:8000';
       const response = await fetch(`${apiUrl}/api/discover/live`, {
@@ -274,6 +330,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: discoveryAbortControllerRef.current.signal,
         body: JSON.stringify({
           category,
           user_interest: interest,
@@ -304,8 +361,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return updated;
       });
 
+      discoveryAbortControllerRef.current = null;
       return mapped;
-    } catch (err) {
+    } catch (err: any) {
+      if (err.name === 'AbortError') return [];
       console.error('Discovery Error:', err);
       return [];
     }
@@ -327,7 +386,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     let statusIndex = 0;
     setLoadingStatus(statuses[0]);
-    const interval = setInterval(() => {
+
+    // Clear any existing interval before starting a new one
+    if (analysisIntervalRef.current) {
+      clearInterval(analysisIntervalRef.current);
+    }
+    
+    // Abort any existing analysis request
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
+
+    analysisIntervalRef.current = setInterval(() => {
       statusIndex = (statusIndex + 1) % statuses.length;
       setLoadingStatus(statuses[statusIndex]);
     }, 1500);
@@ -339,6 +410,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         headers: {
           'Content-Type': 'application/json',
         },
+        signal: abortControllerRef.current.signal,
         body: JSON.stringify({
           profile: userProfile,
           opportunity: opp
@@ -357,10 +429,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return updated;
       });
 
-      clearInterval(interval);
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
+      }
+      abortControllerRef.current = null;
       setView('discovery');
 
-    } catch (error) {
+    } catch (error: any) {
+      if (error.name === 'AbortError') return;
       console.error('API Error, falling back to local simulation:', error);
 
       await new Promise(resolve => setTimeout(resolve, 6000));
@@ -406,7 +483,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         return updated;
       });
 
-      clearInterval(interval);
+      if (analysisIntervalRef.current) {
+        clearInterval(analysisIntervalRef.current);
+        analysisIntervalRef.current = null;
+      }
       setView('discovery');
     }
   };

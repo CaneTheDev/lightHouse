@@ -7,16 +7,34 @@ export const Login: React.FC = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    setError(null);
     if (!email.trim() || !password.trim()) return;
     
+    let result;
     if (isSignUp) {
-      signup(email.trim());
+      if (password !== confirmPassword) {
+        setError("Passwords do not match.");
+        return;
+      }
+      result = signup(email.trim(), password.trim());
     } else {
-      login(email.trim());
+      result = login(email.trim(), password.trim());
     }
+
+    if (!result.success) {
+      setError(result.message || "An error occurred during authentication.");
+    }
+  };
+
+  const toggleAuthMode = () => {
+    setIsSignUp(!isSignUp);
+    setError(null);
+    setConfirmPassword('');
   };
 
   return (
@@ -103,8 +121,25 @@ export const Login: React.FC = () => {
             {isSignUp ? 'Create your account' : 'Welcome back'}
           </h2>
           <p style={{ fontSize: '12.5px', color: 'var(--text-secondary)', marginBottom: '24px' }}>
-            {isSignUp ? 'Sign up to build your profile and find matches.' : 'Sign in with any credentials to continue.'}
+            {isSignUp ? 'Sign up to build your profile and find matches.' : 'Sign in with your local credentials to continue.'}
           </p>
+
+          {error && (
+            <div style={{ 
+              padding: '10px 12px', 
+              background: 'rgba(255, 59, 48, 0.08)', 
+              border: '1px solid rgba(255, 59, 48, 0.2)', 
+              borderRadius: '8px',
+              color: '#d32f2f',
+              fontSize: '12.5px',
+              marginBottom: '20px',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px'
+            }}>
+              <span style={{ fontWeight: 700 }}>!</span> {error}
+            </div>
+          )}
 
           <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
             
@@ -162,6 +197,35 @@ export const Login: React.FC = () => {
               />
             </div>
 
+            {/* Confirm Password field (Sign Up only) */}
+            {isSignUp && (
+              <div>
+                <label style={{ 
+                  fontSize: '11px', 
+                  fontWeight: 700, 
+                  color: 'var(--text-secondary)', 
+                  textTransform: 'uppercase', 
+                  letterSpacing: '0.5px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '5px',
+                  marginBottom: '6px'
+                }}>
+                  <Lock size={12} /> Confirm Password
+                </label>
+                <input
+                  id="auth-confirm-password"
+                  type="password"
+                  required
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={e => setConfirmPassword(e.target.value)}
+                  className="input-clean"
+                  style={{ fontSize: '13.5px', padding: '12px 14px' }}
+                />
+              </div>
+            )}
+
             {/* Submit button */}
             <button
               id="auth-submit-btn"
@@ -193,7 +257,7 @@ export const Login: React.FC = () => {
               <button
                 id="auth-toggle-btn"
                 type="button"
-                onClick={() => setIsSignUp(!isSignUp)}
+                onClick={toggleAuthMode}
                 style={{ 
                   background: 'none', 
                   border: 'none', 

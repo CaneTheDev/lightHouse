@@ -14,7 +14,10 @@ interface CustomLead {
 }
 
 export const LeadsMobile: React.FC = () => {
-  const { savedLeads, removeLead, saveLead } = useApp();
+  const { 
+    savedLeads, removeLead, saveLead,
+    runAnalysis, selectOpportunity, analysisResults
+  } = useApp();
   
   // States for the new job discovery flow
   const [step, setStep] = useState<'initial' | 'form' | 'results'>('initial');
@@ -91,6 +94,13 @@ export const LeadsMobile: React.FC = () => {
     
     saveLead(leadDetails as any, job.title);
     setSavedStates(prev => ({ ...prev, [job.id]: true }));
+  };
+
+  const handleAnalyze = async (job: Opportunity) => {
+    selectOpportunity(job);
+    if (!analysisResults[job.id]) {
+      await runAnalysis(job);
+    }
   };
 
   const handleFindJobs = async (e: React.FormEvent) => {
@@ -267,7 +277,7 @@ export const LeadsMobile: React.FC = () => {
         <div className="fade-in">
           {step === 'initial' && (
             <div className="card" style={{ padding: '40px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
-              <Briefcase size={48} color="var(--primary)" style={{ marginBottom: '8px' }} />
+              <Sparkles size={48} color="var(--primary)" style={{ marginBottom: '8px' }} />
               <h2 style={{ fontSize: '20px', fontWeight: 800, margin: 0 }}>Find Your Perfect Job</h2>
               <p style={{ color: 'var(--text-secondary)', lineHeight: 1.5, fontSize: '14px' }}>
                 Let our AI agents find appropriate jobs tailored just for you based on your profile.
@@ -399,22 +409,42 @@ export const LeadsMobile: React.FC = () => {
                       </p>
                     </div>
                     
-                    <div style={{ display: 'flex', gap: '8px' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        {analysisResults[job.id] ? (
+                          <button 
+                            onClick={() => selectOpportunity(job)} 
+                            className="btn-primary"
+                            style={{ flex: 1.5, padding: '10px', fontSize: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            <Sparkles size={14} /> View Results
+                          </button>
+                        ) : (
+                          <button 
+                            onClick={() => handleAnalyze(job)} 
+                            className="btn-primary"
+                            style={{ flex: 1.5, padding: '10px', fontSize: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
+                          >
+                            <Sparkles size={14} /> Analyze
+                          </button>
+                        )}
+                        <button 
+                          onClick={() => handleSaveJob(job)} 
+                          className="btn-ghost"
+                          disabled={!!savedStates[job.id]}
+                          style={{ flex: 1, padding: '10px', fontSize: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
+                        >
+                          {savedStates[job.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                          {savedStates[job.id] ? 'Saved' : 'Save'}
+                        </button>
+                      </div>
+                      
                       {job.url && (
                         <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn-ghost"
-                          style={{ flex: 1, padding: '10px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', textDecoration: 'none', borderRadius: '10px', border: '1px solid var(--border-card)' }}>
-                          <ExternalLink size={14} /> Apply
+                          style={{ width: '100%', padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '10px', opacity: 0.8 }}>
+                          <ExternalLink size={12} /> Apply on Platform
                         </a>
                       )}
-                      <button 
-                        onClick={() => handleSaveJob(job)} 
-                        className="btn-primary"
-                        disabled={!!savedStates[job.id]}
-                        style={{ flex: 1, padding: '10px', fontSize: '12px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}
-                      >
-                        {savedStates[job.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
-                        {savedStates[job.id] ? 'Saved' : 'Save'}
-                      </button>
                     </div>
                   </div>
                 )) : (

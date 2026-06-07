@@ -1,22 +1,22 @@
-import React, { Suspense, lazy } from 'react';
+import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { AppShell } from './components/Layout/AppShell';
 
-// Lazy load components
-const Login = lazy(() => import('./components/Auth/Login'));
-const Onboarding = lazy(() => import('./components/Onboarding/Onboarding'));
-const Discovery = lazy(() => import('./components/Discovery/Discovery'));
-const Loader = lazy(() => import('./components/Loader/Loader'));
-const Dashboard = lazy(() => import('./components/Dashboard/Dashboard'));
-const Coach = lazy(() => import('./components/Coach/Coach'));
-const Leads = lazy(() => import('./components/Dashboard/Leads'));
-const MatchStrategy = lazy(() => import('./components/Dashboard/MatchStrategy'));
+// Eager load components to avoid navigation lag
+import Login from './components/Auth/Login';
+import Onboarding from './components/Onboarding/Onboarding';
+import Discovery from './components/Discovery/Discovery';
+import Loader from './components/Loader/Loader';
+import Dashboard from './components/Dashboard/Dashboard';
+import Coach from './components/Coach/Coach';
+import Leads from './components/Dashboard/Leads';
+import MatchStrategy from './components/Dashboard/MatchStrategy';
 
 const AppContent: React.FC = () => {
   const { activeView } = useApp();
 
   return (
-    <Suspense fallback={null}>
+    <>
       {(() => {
         if (activeView === 'login') {
           return <Login />;
@@ -51,7 +51,7 @@ const AppContent: React.FC = () => {
           </AppShell>
         );
       })()}
-    </Suspense>
+    </>
   );
 };
 

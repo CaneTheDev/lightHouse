@@ -5,7 +5,7 @@ import {
   Search, ArrowLeft, CheckSquare, Square, Clipboard, Check,
   ExternalLink, Terminal, ChevronDown, ChevronUp,
   UserCheck, Bookmark, BookmarkCheck, CheckCircle2, RefreshCw,
-  Briefcase, GraduationCap, Award, Users, Handshake
+  Briefcase, GraduationCap, Award, Users, Handshake, Sparkles
 } from 'lucide-react';
 import './Discovery.css';
 
@@ -125,6 +125,21 @@ export const DiscoveryMobile: React.FC = () => {
     if (activeCategory) {
       await performDiscovery(activeCategory);
     }
+  };
+
+  const handleSaveJob = (job: Opportunity) => {
+    if (savedStates[job.id]) return;
+    
+    const leadDetails = {
+      name: job.organization,
+      source: 'web_search',
+      profile_url: job.url || '', 
+      snippet: job.requirements,
+      suggested_message: `Interested in the ${job.title} role at ${job.organization}. \n\nDetails: ${job.requirements.split('\n\n')[0]}`
+    };
+    
+    saveLead(leadDetails as any, job.title);
+    setSavedStates(prev => ({ ...prev, [job.id]: true }));
   };
 
   const handleSave = (contact: any, idx: number) => {
@@ -484,34 +499,45 @@ export const DiscoveryMobile: React.FC = () => {
                   {opp.requirements}
                 </p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', gap: '8px' }}>
-                    {opp.url && (
-                      <a href={opp.url} target="_blank" rel="noopener noreferrer" className="btn-ghost"
-                        style={{ flex: 1, padding: '10px', fontSize: '13px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', textDecoration: 'none', borderRadius: '10px', border: '1px solid var(--border-card)' }}>
-                        <ExternalLink size={14} /> Apply
-                      </a>
-                    )}
+                  <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
                     {isAnalyzed ? (
                       <button onClick={() => selectOpportunity(opp)} className="btn-primary"
-                        style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '10px', background: 'var(--bg-btn-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        <BookmarkCheck size={14} /> Saved
+                        style={{ flex: 1.5, padding: '10px', fontSize: '13px', borderRadius: '10px', background: 'var(--bg-btn-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <CheckCircle2 size={14} /> View Results
                       </button>
                     ) : (
                       <button onClick={() => handleAnalyze(opp)} className="btn-primary"
-                        style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '10px', background: 'var(--bg-btn-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                        <Bookmark size={14} /> Save
+                        style={{ flex: 1.5, padding: '10px', fontSize: '13px', borderRadius: '10px', background: 'var(--bg-btn-dark)', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        <Sparkles size={14} /> Analyze
                       </button>
                     )}
+                    
+                    <button 
+                      onClick={() => handleSaveJob(opp)} 
+                      disabled={!!savedStates[opp.id]}
+                      className="btn-ghost"
+                      style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
+                    >
+                      {savedStates[opp.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                      {savedStates[opp.id] ? 'Saved' : 'Save'}
+                    </button>
                   </div>
-                  {isAnalyzed && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #dcfce7', borderRadius: '10px' }}>
-                      <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <CheckCircle2 size={14} /> Match Found
-                      </span>
-                      <span style={{ fontSize: '14px', fontWeight: 900, color: '#16a34a' }}>{analysis.match_score}%</span>
-                    </div>
+
+                  {opp.url && (
+                    <a href={opp.url} target="_blank" rel="noopener noreferrer" className="btn-ghost"
+                      style={{ width: '100%', padding: '8px', fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px', textDecoration: 'none', borderRadius: '8px', opacity: 0.8 }}>
+                      <ExternalLink size={12} /> Apply on Platform
+                    </a>
                   )}
                 </div>
+                {isAnalyzed && (
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '8px 12px', background: '#f0fdf4', border: '1px solid #dcfce7', borderRadius: '10px' }}>
+                    <span style={{ fontSize: '12px', fontWeight: 600, color: '#16a34a', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <CheckCircle2 size={14} /> Match Found
+                    </span>
+                    <span style={{ fontSize: '14px', fontWeight: 900, color: '#16a34a' }}>{analysis.match_score}%</span>
+                  </div>
+                )}
               </div>
             );
           })}

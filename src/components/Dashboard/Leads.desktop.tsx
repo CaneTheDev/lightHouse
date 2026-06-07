@@ -14,7 +14,10 @@ interface CustomLead {
 }
 
 export const LeadsDesktop: React.FC = () => {
-  const { savedLeads, removeLead, saveLead } = useApp();
+  const { 
+    savedLeads, removeLead, saveLead,
+    runAnalysis, selectOpportunity, analysisResults
+  } = useApp();
   
   // States for the new job discovery flow
   const [step, setStep] = useState<'initial' | 'form' | 'results'>('initial');
@@ -92,6 +95,13 @@ export const LeadsDesktop: React.FC = () => {
     
     saveLead(leadDetails as any, job.title);
     setSavedStates(prev => ({ ...prev, [job.id]: true }));
+  };
+
+  const handleAnalyze = async (job: Opportunity) => {
+    selectOpportunity(job);
+    if (!analysisResults[job.id]) {
+      await runAnalysis(job);
+    }
   };
 
   const handleFindJobs = async (e: React.FormEvent) => {
@@ -311,7 +321,7 @@ export const LeadsDesktop: React.FC = () => {
         <div className="fade-in">
           {step === 'initial' && (
             <div className="card" style={{ padding: '60px 20px', textAlign: 'center', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '20px' }}>
-              <Briefcase size={64} color="var(--primary)" style={{ marginBottom: '10px' }} />
+              <Sparkles size={64} color="var(--primary)" style={{ marginBottom: '10px' }} />
               <h2 style={{ fontSize: '24px', fontWeight: 800, margin: 0 }}>Find Your Perfect Job</h2>
               <p style={{ maxWidth: '500px', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
                 Let our agents analyze your qualifications and find appropriate jobs tailored just for you. Get started by filling out your profile.
@@ -449,19 +459,38 @@ export const LeadsDesktop: React.FC = () => {
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
                       {job.url && (
                         <a href={job.url} target="_blank" rel="noopener noreferrer" className="btn-ghost"
-                          style={{ padding: '8px 14px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', borderRadius: '10px' }}>
-                          <ExternalLink size={13} /> Apply
+                          style={{ padding: '8px 14px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '5px', textDecoration: 'none', borderRadius: '10px', opacity: 0.7 }}>
+                          <ExternalLink size={12} /> Apply
                         </a>
                       )}
+
                       <button 
                         onClick={() => handleSaveJob(job)} 
-                        className="btn-primary"
+                        className="btn-ghost"
                         disabled={!!savedStates[job.id]}
-                        style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
                       >
                         {savedStates[job.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
                         {savedStates[job.id] ? 'Saved' : 'Save'}
                       </button>
+
+                      {analysisResults[job.id] ? (
+                        <button 
+                          onClick={() => selectOpportunity(job)} 
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <Sparkles size={14} /> View Results
+                        </button>
+                      ) : (
+                        <button 
+                          onClick={() => handleAnalyze(job)} 
+                          className="btn-primary"
+                          style={{ padding: '8px 16px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px' }}
+                        >
+                          <Sparkles size={14} /> Analyze
+                        </button>
+                      )}
                     </div>
                   </div>
                 )) : (
