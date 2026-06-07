@@ -7,7 +7,7 @@ import {
 } from 'lucide-react';
 import { getNames } from 'country-list';
 
-const COUNTRIES = getNames();
+const COUNTRIES = getNames().map(c => c.replace(/\s*\(.*?\)\s*/g, '').trim());
 
 export const OnboardingMobile: React.FC = () => {
   const { saveProfile, userProfile, activeView, resetProfile } = useApp();

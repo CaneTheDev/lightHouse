@@ -10,7 +10,7 @@ import { useCvExtractor } from '../Coach/useCvExtractor';
 import { LeadsCvUploadModal } from './LeadsCvUploadModal';
 import { getNames } from 'country-list';
 
-const COUNTRIES = getNames();
+const COUNTRIES = getNames().map(c => c.replace(/\s*\(.*?\)\s*/g, '').trim());
 
 interface CustomLead {
   id: string;
