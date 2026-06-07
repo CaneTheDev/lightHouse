@@ -4,10 +4,13 @@ import type { Opportunity } from '../../context/AppContext';
 import { 
   Clipboard, Check, Plus, Trash2, 
   BookOpen, Sparkles, AlertCircle, Briefcase, Search, ArrowRight, RefreshCcw,
-  ExternalLink, Bookmark, BookmarkCheck, FileText, Paperclip, Loader2
+  ExternalLink, Bookmark, BookmarkCheck, FileText, Paperclip, Loader2, X
 } from 'lucide-react';
 import { useCvExtractor } from '../Coach/useCvExtractor';
 import { LeadsCvUploadModal } from './LeadsCvUploadModal';
+import { getNames } from 'country-list';
+
+const COUNTRIES = getNames();
 
 interface CustomLead {
   id: string;
@@ -53,11 +56,24 @@ export const LeadsDesktop: React.FC = () => {
     name: userProfile?.name || '',
     major: userProfile?.major || '',
     academicLevel: userProfile?.academicLevel || 'University',
-    skills: userProfile?.skills ? userProfile.skills.join(', ') : '',
-    interests: userProfile?.interests ? userProfile.interests.join(', ') : '',
+    skills: userProfile?.skills || [],
+    interests: userProfile?.interests || [],
     country: initialLoc.country,
     state: initialLoc.state
   });
+  const [currentSkill, setCurrentSkill] = useState('');
+  const [currentInterest, setCurrentInterest] = useState('');
+  const [countrySuggestions, setCountrySuggestions] = useState<string[]>([]);
+  const countryRef = useRef<HTMLDivElement>(null);
+
+  // Close suggestion dropdowns on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (countryRef.current && !countryRef.current.contains(e.target as Node)) setCountrySuggestions([]);
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   // Sync with user profile if it loads/updates, without overwriting user edits
   useEffect(() => {
@@ -67,8 +83,8 @@ export const LeadsDesktop: React.FC = () => {
         name: prev.name || userProfile.name || '',
         major: prev.major || userProfile.major || '',
         academicLevel: prev.academicLevel || userProfile.academicLevel || 'University',
-        skills: prev.skills || (userProfile.skills ? userProfile.skills.join(', ') : ''),
-        interests: prev.interests || (userProfile.interests ? userProfile.interests.join(', ') : ''),
+        skills: prev.skills.length > 0 ? prev.skills : (userProfile.skills || []),
+        interests: prev.interests.length > 0 ? prev.interests : (userProfile.interests || []),
         country: prev.country || loc.country,
         state: prev.state || loc.state
       }));
@@ -149,6 +165,53 @@ export const LeadsDesktop: React.FC = () => {
     }
   };
 
+  const handleAddSkill = () => {
+    const trimmed = currentSkill.trim();
+    if (trimmed && !leadProfile.skills.includes(trimmed)) {
+      setLeadProfile({ ...leadProfile, skills: [...leadProfile.skills, trimmed] });
+    }
+    setCurrentSkill('');
+  };
+
+  const handleRemoveSkill = (skill: string) => {
+    setLeadProfile({ ...leadProfile, skills: leadProfile.skills.filter(s => s !== skill) });
+  };
+
+  const handleAddInterest = () => {
+    const trimmed = currentInterest.trim();
+    if (trimmed && !leadProfile.interests.includes(trimmed)) {
+      setLeadProfile({ ...leadProfile, interests: [...leadProfile.interests, trimmed] });
+    }
+    setCurrentInterest('');
+  };
+
+  const handleRemoveInterest = (interest: string) => {
+    setLeadProfile({ ...leadProfile, interests: leadProfile.interests.filter(i => i !== interest) });
+  };
+
+  const handleCountryChange = (val: string) => {
+    setLeadProfile({ ...leadProfile, country: val });
+    if (!val.trim()) { setCountrySuggestions([]); return; }
+    const filtered = COUNTRIES.filter(c => c.toLowerCase().includes(val.toLowerCase())).slice(0, 6);
+    setCountrySuggestions(filtered);
+  };
+
+  const SuggestionList = ({ items, onSelect, refObj }: { items: string[]; onSelect: (v: string) => void; refObj: React.RefObject<HTMLDivElement | null> }) => {
+    const [hoveredIdx, setHoveredIdx] = useState<number | null>(null);
+    if (items.length === 0) return null;
+    return (
+      <div ref={refObj} style={{ position: 'absolute', top: '100%', left: 0, right: 0, background: 'var(--bg-card)', border: '1px solid var(--border-input)', borderRadius: '10px', boxShadow: '0 8px 24px rgba(0,0,0,0.08)', zIndex: 100, maxHeight: '180px', overflowY: 'auto', padding: '4px 0', marginTop: '4px' }}>
+        {items.map((item, idx) => (
+          <div key={idx} style={{ padding: '10px 14px', fontSize: '13.5px', color: 'var(--text-primary)', cursor: 'pointer', background: hoveredIdx === idx ? 'var(--bg-input)' : 'transparent' }}
+            onMouseEnter={() => setHoveredIdx(idx)} onMouseLeave={() => setHoveredIdx(null)}
+            onMouseDown={(e) => { e.preventDefault(); onSelect(item); }}>
+            {item}
+          </div>
+        ))}
+      </div>
+    );
+  };
+
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -181,11 +244,11 @@ export const LeadsDesktop: React.FC = () => {
     try {
       const payload = {
         category: 'internship',
-        user_interest: leadProfile.interests || 'relevant roles',
+        user_interest: leadProfile.interests.length > 0 ? leadProfile.interests.join(', ') : 'relevant roles',
         academic_level: leadProfile.academicLevel,
         location: location,
         major: leadProfile.major,
-        skills: leadProfile.skills ? leadProfile.skills.split(',').map(s => s.trim()) : [],
+        skills: leadProfile.skills || [],
         cv_text: extractedCv,
         exclude_urls: []
       };
@@ -244,7 +307,7 @@ export const LeadsDesktop: React.FC = () => {
 
       const payload = {
         category: 'internship',
-        user_interest: leadProfile.interests,
+        user_interest: leadProfile.interests.length > 0 ? leadProfile.interests.join(', ') : '',
         academic_level: leadProfile.academicLevel,
         location: effectiveLocation,
         exclude_urls: excludeUrls
@@ -313,8 +376,8 @@ export const LeadsDesktop: React.FC = () => {
                   name: '',
                   major: '',
                   academicLevel: 'University',
-                  skills: '',
-                  interests: '',
+                  skills: [],
+                  interests: [],
                   country: '',
                   state: ''
                 });
@@ -465,7 +528,7 @@ export const LeadsDesktop: React.FC = () => {
                 </div>
 
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '20px' }}>
-                  <div>
+                  <div style={{ position: 'relative' }}>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
                     <input
                       type="text"
@@ -473,10 +536,12 @@ export const LeadsDesktop: React.FC = () => {
                       className="input-clean"
                       placeholder="e.g. USA, UK, Nigeria"
                       value={leadProfile.country}
-                      onChange={e => setLeadProfile({...leadProfile, country: e.target.value})}
+                      onChange={e => handleCountryChange(e.target.value)}
+                      autoComplete="off"
                     />
+                    <SuggestionList items={countrySuggestions} onSelect={(v) => { setLeadProfile({...leadProfile, country: v}); setCountrySuggestions([]); }} refObj={countryRef} />
                   </div>
-                  <div>
+                  <div style={{ position: 'relative' }}>
                     <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>State / City (Optional)</label>
                     <input
                       type="text"
@@ -504,26 +569,54 @@ export const LeadsDesktop: React.FC = () => {
 
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Core Skills</label>
-                  <input
-                    type="text"
-                    required
-                    className="input-clean"
-                    placeholder="e.g. Python, React, Design"
-                    value={leadProfile.skills}
-                    onChange={e => setLeadProfile({...leadProfile, skills: e.target.value})}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      className="input-clean"
+                      placeholder="e.g. Python, React, Design"
+                      value={currentSkill}
+                      onChange={e => setCurrentSkill(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddSkill(); } }}
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" onClick={handleAddSkill} className="btn-add"
+                      style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border-card)', background: 'var(--bg-input)', fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>+</button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {leadProfile.skills.map(skill => (
+                      <span key={skill} className="chip" style={{ fontSize: '12px', padding: '5px 10px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--bg-tag)', border: '1px solid var(--border-card)' }}>
+                        {skill}
+                        <button type="button" onClick={() => handleRemoveSkill(skill)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-muted)' }}><X size={12} /></button>
+                      </span>
+                    ))}
+                    {leadProfile.skills.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No skills added yet.</span>}
+                  </div>
                 </div>
 
                 <div>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Job Interests / Role</label>
-                  <input
-                    type="text"
-                    required
-                    className="input-clean"
-                    placeholder="e.g. Frontend Engineer, Product Manager"
-                    value={leadProfile.interests}
-                    onChange={e => setLeadProfile({...leadProfile, interests: e.target.value})}
-                  />
+                  <div style={{ display: 'flex', gap: '8px', marginBottom: '8px' }}>
+                    <input
+                      type="text"
+                      className="input-clean"
+                      placeholder="e.g. Frontend Engineer, Product Manager"
+                      value={currentInterest}
+                      onChange={e => setCurrentInterest(e.target.value)}
+                      onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddInterest(); } }}
+                      style={{ flex: 1 }}
+                    />
+                    <button type="button" onClick={handleAddInterest} className="btn-add"
+                      style={{ width: '36px', height: '36px', borderRadius: '8px', border: '1px solid var(--border-card)', background: 'var(--bg-input)', fontSize: '18px', fontWeight: 600, color: 'var(--text-secondary)', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>+</button>
+                  </div>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+                    {leadProfile.interests.map(interest => (
+                      <span key={interest} className="chip" style={{ fontSize: '12px', padding: '5px 10px', borderRadius: '8px', display: 'inline-flex', alignItems: 'center', gap: '6px', background: 'var(--bg-tag)', border: '1px solid var(--border-card)' }}>
+                        {interest}
+                        <button type="button" onClick={() => handleRemoveInterest(interest)} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', color: 'var(--text-muted)' }}><X size={12} /></button>
+                      </span>
+                    ))}
+                    {leadProfile.interests.length === 0 && <span style={{ fontSize: '12px', color: 'var(--text-muted)' }}>No interests added yet.</span>}
+                  </div>
                 </div>
 
                 <button 
@@ -594,7 +687,7 @@ export const LeadsDesktop: React.FC = () => {
               </div>
 
               <form onSubmit={handleFindJobs} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>Target Country *</label>
                   <input
                     type="text"
@@ -602,10 +695,12 @@ export const LeadsDesktop: React.FC = () => {
                     className="input-clean"
                     placeholder="e.g. USA, UK, Nigeria"
                     value={leadProfile.country}
-                    onChange={e => setLeadProfile({...leadProfile, country: e.target.value})}
+                    onChange={e => handleCountryChange(e.target.value)}
+                    autoComplete="off"
                   />
+                  <SuggestionList items={countrySuggestions} onSelect={(v) => { setLeadProfile({...leadProfile, country: v}); setCountrySuggestions([]); }} refObj={countryRef} />
                 </div>
-                <div>
+                <div style={{ position: 'relative' }}>
                   <label style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', display: 'block', marginBottom: '6px' }}>State / City (Optional)</label>
                   <input
                     type="text"

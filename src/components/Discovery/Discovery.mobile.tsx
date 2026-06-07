@@ -27,6 +27,7 @@ const CATEGORIES = {
   fellowship:  { icon: Award,         label: 'Fellowships',  desc: 'Research & growth programs',   color: '#f59e0b' },
   community:   { icon: Users,         label: 'Community',    desc: 'Peers and groups',             color: '#10b981' },
   networking:  { icon: Handshake,     label: 'Networking',   desc: 'Professional relationships',   color: '#ef4444' },
+  saves:       { icon: Bookmark,      label: 'Saves',        desc: 'Bookmarked for later',         color: '#6366f1' },
 } as const;
 
 export const DiscoveryMobile: React.FC = () => {
@@ -35,7 +36,8 @@ export const DiscoveryMobile: React.FC = () => {
     selectedOpportunity, selectOpportunity,
     saveLead, fetchLiveOpportunities, discoveryComment,
     activeCategory, setActiveCategory,
-    liveResults, setLiveResults
+    liveResults, setLiveResults,
+    savedOpportunities, saveOpportunity, removeOpportunity
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -85,6 +87,7 @@ export const DiscoveryMobile: React.FC = () => {
 
   const handleCategoryClick = async (key: string) => {
     setActiveCategory(key);
+    if (key === 'saves') return; // Local only
     if (!liveResults[key]) {
       setIsDiscovering(true);
       await performDiscovery(key);
@@ -128,8 +131,14 @@ export const DiscoveryMobile: React.FC = () => {
   };
 
   const handleSaveJob = (job: Opportunity) => {
-    if (savedStates[job.id]) return;
+    if (savedOpportunities.some(o => o.id === job.id)) {
+      removeOpportunity(job.id);
+      return;
+    }
     
+    saveOpportunity(job);
+    
+    // Also save as lead for networking
     const leadDetails = {
       name: job.organization,
       source: 'web_search',
@@ -139,7 +148,6 @@ export const DiscoveryMobile: React.FC = () => {
     };
     
     saveLead(leadDetails as any, job.title);
-    setSavedStates(prev => ({ ...prev, [job.id]: true }));
   };
 
   const handleSave = (contact: any, idx: number) => {
@@ -163,7 +171,10 @@ export const DiscoveryMobile: React.FC = () => {
     ? result.success_probability.toLowerCase() === 'high' ? 'score-ring-fill-hi'
     : result.success_probability.toLowerCase() === 'medium' ? 'score-ring-fill-mid' : 'score-ring-fill-low' : '';
 
-  const currentOpps = activeCategory ? (liveResults[activeCategory] || []) : [];
+  const currentOpps = activeCategory === 'saves' 
+    ? savedOpportunities 
+    : (activeCategory ? (liveResults[activeCategory] || []) : []);
+  
   const filteredOpps = currentOpps.filter(o =>
     !search || o.title.toLowerCase().includes(search.toLowerCase()) ||
     o.organization.toLowerCase().includes(search.toLowerCase())
@@ -194,9 +205,25 @@ export const DiscoveryMobile: React.FC = () => {
             {selectedOpportunity.title}
           </h2>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '8px' }}>
-            <span className={`badge ${probClass}`} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '100px', fontWeight: 600 }}>
-              {result.success_probability} Match
-            </span>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span className={`badge ${probClass}`} style={{ fontSize: '11px', padding: '4px 10px', borderRadius: '100px', fontWeight: 600 }}>
+                {result.success_probability} Match
+              </span>
+              {selectedOpportunity.url && (
+                <a href={selectedOpportunity.url} target="_blank" rel="noopener noreferrer" className="btn-primary"
+                  style={{ padding: '4px 10px', fontSize: '11px', display: 'inline-flex', alignItems: 'center', gap: '4px', borderRadius: '100px', textDecoration: 'none', fontWeight: 600 }}>
+                  <ExternalLink size="11" /> Apply
+                </a>
+              )}
+              <button 
+                onClick={() => handleSaveJob(selectedOpportunity)} 
+                className="btn-ghost"
+                style={{ padding: '5px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px', color: savedOpportunities.some(o => o.id === selectedOpportunity.id) ? '#6366f1' : 'inherit' }}
+              >
+                {savedOpportunities.some(o => o.id === selectedOpportunity.id) ? <BookmarkCheck size={11} /> : <Bookmark size={11} />}
+                {savedOpportunities.some(o => o.id === selectedOpportunity.id) ? 'Saved' : 'Save'}
+              </button>
+            </div>
             <button onClick={() => handleAnalyze(selectedOpportunity, true)} className="btn-ghost"
               style={{ padding: '5px 10px', fontSize: '11px', display: 'flex', alignItems: 'center', gap: '4px' }}>
               <RefreshCw size={11} /> Refresh
@@ -427,14 +454,18 @@ export const DiscoveryMobile: React.FC = () => {
             <div style={{ flex: 1 }}>
               <h1 style={{ fontSize: '22px', fontWeight: 800, color: 'var(--text-primary)', margin: 0, letterSpacing: '-0.5px' }}>{cat.label}</h1>
               <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: '2px 0 0' }}>
-                {isDiscovering ? 'AI searching...' : `${filteredOpps.length} results`}
-                {userProfile?.location && <> in <strong>{userProfile.location}</strong></>}
+                {activeCategory === 'saves' 
+                  ? `${filteredOpps.length} bookmarked items`
+                  : (isDiscovering ? 'AI searching...' : `${filteredOpps.length} results`)}
+                {!isDiscovering && activeCategory !== 'saves' && userProfile?.location && <> in <strong>{userProfile.location}</strong></>}
               </p>
             </div>
-            <button onClick={handleReload} disabled={isDiscovering} className="btn-ghost"
-              style={{ padding: '6px', borderRadius: '8px' }}>
-              <RefreshCw size={14} className={isDiscovering ? 'spin' : ''} />
-            </button>
+            {activeCategory !== 'saves' && (
+              <button onClick={handleReload} disabled={isDiscovering} className="btn-ghost"
+                style={{ padding: '6px', borderRadius: '8px' }}>
+                <RefreshCw size={14} className={isDiscovering ? 'spin' : ''} />
+              </button>
+            )}
           </div>
         </div>
 
@@ -479,7 +510,7 @@ export const DiscoveryMobile: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {isDiscovering && filteredOpps.length === 0 ? (
+          {activeCategory !== 'saves' && isDiscovering && filteredOpps.length === 0 ? (
             <>
               {[1, 2, 3, 4].map((n) => (
                 <div key={n} className="skeleton-card-mobile">
@@ -513,6 +544,7 @@ export const DiscoveryMobile: React.FC = () => {
           ) : filteredOpps.map(opp => {
             const isAnalyzed = !!analysisResults[opp.id];
             const analysis = analysisResults[opp.id];
+            const isSaved = savedOpportunities.some(o => o.id === opp.id);
             return (
               <div key={opp.id} className="card fade-in-up" style={{ padding: '16px' }}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '10px', marginBottom: '8px' }}>
@@ -545,12 +577,11 @@ export const DiscoveryMobile: React.FC = () => {
                     
                     <button 
                       onClick={() => handleSaveJob(opp)} 
-                      disabled={!!savedStates[opp.id]}
                       className="btn-ghost"
-                      style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
+                      style={{ flex: 1, padding: '10px', fontSize: '13px', borderRadius: '10px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px', border: '1px solid var(--border-card)', color: isSaved ? '#6366f1' : 'inherit' }}
                     >
-                      {savedStates[opp.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
-                      {savedStates[opp.id] ? 'Saved' : 'Save'}
+                      {isSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                      {isSaved ? 'Saved' : 'Save'}
                     </button>
                   </div>
 
@@ -572,14 +603,20 @@ export const DiscoveryMobile: React.FC = () => {
               </div>
             );
           })}
-          {filteredOpps.length === 0 && !isDiscovering && (
+          {!isDiscovering && activeCategory === 'saves' && filteredOpps.length === 0 && (
+            <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
+              You haven't bookmarked any items yet.
+            </div>
+          )}
+
+          {activeCategory !== 'saves' && filteredOpps.length === 0 && !isDiscovering && (
             <div style={{ textAlign: 'center', padding: '36px 0', color: 'var(--text-muted)', fontSize: '12px' }}>
               {search ? 'No matches found.' : `No ${cat.label.toLowerCase()} available yet.`}
             </div>
           )}
         </div>
 
-        {filteredOpps.length > 0 && (
+        {activeCategory !== 'saves' && filteredOpps.length > 0 && (
           <div style={{ marginTop: '24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px', paddingBottom: '20px' }}>
             {isDiscovering && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '12px' }}>
@@ -618,7 +655,7 @@ export const DiscoveryMobile: React.FC = () => {
       <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         {Object.entries(CATEGORIES).map(([key, cat]) => {
           const CatIcon = cat.icon;
-          const liveCount = liveResults[key]?.length;
+          const liveCount = key === 'saves' ? savedOpportunities.length : liveResults[key]?.length;
           return (
             <div key={key} onClick={() => handleCategoryClick(key)} className="card fade-in-up"
               style={{ padding: '20px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '14px',
@@ -634,7 +671,7 @@ export const DiscoveryMobile: React.FC = () => {
                 <p style={{ fontSize: '11.5px', color: 'var(--text-secondary)', margin: 0 }}>{cat.desc}</p>
               </div>
               <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', whiteSpace: 'nowrap', flexShrink: 0 }}>
-                {liveCount !== undefined ? liveCount : '→'}
+                {key === 'saves' ? `${liveCount}` : (liveCount !== undefined ? liveCount : '→')}
               </span>
             </div>
           );

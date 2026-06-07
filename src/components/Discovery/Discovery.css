@@ -34,18 +34,48 @@
   color: var(--text-muted);
 }
 
+/* ─── Match detail page — full height ─── */
+.page-body-match {
+  padding: 32px;
+  max-width: 1100px;
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+@media (max-width: 768px) {
+  .page-body-match {
+    padding: 16px;
+  }
+}
+
 /* ─── Split layout for match detail (desktop) ─── */
 .discovery-split {
   display: grid;
   grid-template-columns: 1fr 1fr;
   gap: 20px;
-  align-items: start;
+  flex: 1;
+  min-height: 0;
 }
 
 @media (max-width: 960px) {
   .discovery-split {
     grid-template-columns: 1fr;
   }
+}
+
+.discovery-split-left,
+.discovery-split-right {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 /* ─── Sub-tab navigation inside networking panel ─── */

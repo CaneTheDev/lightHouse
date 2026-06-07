@@ -89,6 +89,9 @@ interface AppContextType {
   setActiveCategory: (category: string | null) => void;
   liveResults: Record<string, Opportunity[]>;
   setLiveResults: React.Dispatch<React.SetStateAction<Record<string, Opportunity[]>>>;
+  savedOpportunities: Opportunity[];
+  saveOpportunity: (opp: Opportunity) => void;
+  removeOpportunity: (id: string) => void;
   fetchLiveOpportunities: (category: string, interest: string, excludeUrls?: string[]) => Promise<Opportunity[]>;
   login: (email: string, password: string) => { success: boolean; message?: string };
   signup: (email: string, password: string) => { success: boolean; message?: string };
@@ -166,6 +169,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const [savedLeads, setSavedLeads] = useState<SavedLead[]>(() => {
     const saved = localStorage.getItem('opportunity_os_leads');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const [savedOpportunities, setSavedOpportunities] = useState<Opportunity[]>(() => {
+    const saved = localStorage.getItem('opportunity_os_saved_opps');
     return saved ? JSON.parse(saved) : [];
   });
 
@@ -252,6 +260,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSelectedOpportunity(null);
     setActiveCategory(null);
     setLiveResults({});
+    setSavedOpportunities([]);
     setAnalysisResults({});
     setChatHistories({});
     setSavedLeads([]);
@@ -315,6 +324,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSavedLeads(prev => {
       const updated = prev.filter(d => d.id !== id);
       localStorage.setItem('opportunity_os_leads', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const saveOpportunity = (opp: Opportunity) => {
+    setSavedOpportunities(prev => {
+      if (prev.find(o => o.id === opp.id)) return prev;
+      const updated = [opp, ...prev];
+      localStorage.setItem('opportunity_os_saved_opps', JSON.stringify(updated));
+      return updated;
+    });
+  };
+
+  const removeOpportunity = (id: string) => {
+    setSavedOpportunities(prev => {
+      const updated = prev.filter(o => o.id !== id);
+      localStorage.setItem('opportunity_os_saved_opps', JSON.stringify(updated));
       return updated;
     });
   };
@@ -522,6 +548,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       analysisResults,
       chatHistories,
       savedLeads,
+      savedOpportunities,
       loadingStatus,
       discoveryComment,
       activeCategory,
@@ -540,6 +567,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setChatHistories,
       saveLead,
       removeLead,
+      saveOpportunity,
+      removeOpportunity,
       fetchLiveOpportunities,
     }}>
       {children}

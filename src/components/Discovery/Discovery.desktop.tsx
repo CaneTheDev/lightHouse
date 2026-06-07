@@ -27,6 +27,7 @@ const CATEGORIES = {
   fellowship:  { icon: Award,         label: 'Fellowships',    desc: 'Research and professional growth programs',         color: '#f59e0b' },
   community:   { icon: Users,         label: 'Community',      desc: 'Connect with like-minded peers and groups',         color: '#10b981' },
   networking:  { icon: Handshake,     label: 'Networking',     desc: 'Build professional relationships and mentorship',   color: '#ef4444' },
+  saves:       { icon: Bookmark,      label: 'Saves',          desc: 'Your bookmarked opportunities for later',           color: '#6366f1' },
 } as const;
 
 export const DiscoveryDesktop: React.FC = () => {
@@ -35,7 +36,8 @@ export const DiscoveryDesktop: React.FC = () => {
     selectedOpportunity, selectOpportunity,
     saveLead, fetchLiveOpportunities, discoveryComment,
     activeCategory, setActiveCategory,
-    liveResults, setLiveResults
+    liveResults, setLiveResults,
+    savedOpportunities, saveOpportunity, removeOpportunity
   } = useApp();
 
   const [search, setSearch] = useState('');
@@ -83,6 +85,7 @@ export const DiscoveryDesktop: React.FC = () => {
 
   const handleCategoryClick = async (key: string) => {
     setActiveCategory(key);
+    if (key === 'saves') return; // Local only
     if (!liveResults[key]) {
       setIsDiscovering(true);
       await performDiscovery(key);
@@ -126,8 +129,14 @@ export const DiscoveryDesktop: React.FC = () => {
   };
 
   const handleSaveJob = (job: Opportunity) => {
-    if (savedStates[job.id]) return;
+    if (savedOpportunities.some(o => o.id === job.id)) {
+      removeOpportunity(job.id);
+      return;
+    }
     
+    saveOpportunity(job);
+    
+    // Also save as lead for networking if it's not already there
     const leadDetails = {
       name: job.organization,
       source: 'web_search',
@@ -137,7 +146,6 @@ export const DiscoveryDesktop: React.FC = () => {
     };
     
     saveLead(leadDetails as any, job.title);
-    setSavedStates(prev => ({ ...prev, [job.id]: true }));
   };
 
   const handleSave = (contact: any, idx: number) => {
@@ -161,7 +169,10 @@ export const DiscoveryDesktop: React.FC = () => {
     ? result.success_probability.toLowerCase() === 'high' ? 'score-ring-fill-hi'
     : result.success_probability.toLowerCase() === 'medium' ? 'score-ring-fill-mid' : 'score-ring-fill-low' : '';
 
-  const currentOpps = activeCategory ? (liveResults[activeCategory] || []) : [];
+  const currentOpps = activeCategory === 'saves' 
+    ? savedOpportunities 
+    : (activeCategory ? (liveResults[activeCategory] || []) : []);
+  
   const filteredOpps = currentOpps.filter(o =>
     !search || o.title.toLowerCase().includes(search.toLowerCase()) ||
     o.organization.toLowerCase().includes(search.toLowerCase())
@@ -173,8 +184,8 @@ export const DiscoveryDesktop: React.FC = () => {
   if (isMatchView) {
     const catLabel = activeCategory ? CATEGORIES[activeCategory as keyof typeof CATEGORIES]?.label : 'Discovery';
     return (
-      <div className="page-body fade-in-up">
-        <div style={{ marginBottom: '20px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+      <div className="page-body-match fade-in-up">
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', gap: '10px', flexShrink: 0 }}>
           <button
             id="discovery-back-btn"
             onClick={() => selectOpportunity(null)}
@@ -188,7 +199,7 @@ export const DiscoveryDesktop: React.FC = () => {
           </span>
         </div>
 
-        <div style={{ marginBottom: '24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+        <div style={{ marginBottom: '16px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px', flexShrink: 0 }}>
           <div>
             <p style={{ fontSize: '12px', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>
               {selectedOpportunity.organization}
@@ -198,6 +209,12 @@ export const DiscoveryDesktop: React.FC = () => {
             </h1>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            {selectedOpportunity.url && (
+              <a href={selectedOpportunity.url} target="_blank" rel="noopener noreferrer" className="btn-primary"
+                style={{ padding: '7px 16px', fontSize: '12.5px', display: 'flex', alignItems: 'center', gap: '6px', borderRadius: '100px', textDecoration: 'none', fontWeight: 600 }}>
+                <ExternalLink size={13} /> Apply
+              </a>
+            )}
             <span className={`badge ${probClass}`} style={{ fontSize: '12.5px', padding: '6px 16px', borderRadius: '100px', fontWeight: 600 }}>
               {result.success_probability} Match
             </span>
@@ -210,7 +227,7 @@ export const DiscoveryDesktop: React.FC = () => {
 
         <div className="discovery-split">
           {/* LEFT: Match Strategy */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          <div className="discovery-split-left">
             <div className="card" style={{ padding: '24px' }}>
               <div className="score-row">
                 <div style={{ position: 'relative', width: '100px', height: '100px', flexShrink: 0 }}>
@@ -296,9 +313,9 @@ export const DiscoveryDesktop: React.FC = () => {
           </div>
 
           {/* RIGHT: Networking Suite */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-            <div className="card" style={{ padding: '24px' }}>
-              <div style={{ marginBottom: '16px' }}>
+          <div className="discovery-split-right">
+            <div className="card" style={{ padding: '24px', display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 }}>
+              <div style={{ flexShrink: 0 }}>
                 <p style={{ fontSize: '10.5px', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: '4px' }}>
                   Connect Network
                 </p>
@@ -312,7 +329,7 @@ export const DiscoveryDesktop: React.FC = () => {
               </div>
 
               {networkTab === 'mentors' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
                   {result.suggested_contacts.length > 0 ? result.suggested_contacts.map((contact, i) => {
                     const copyId = `contact-${i}`;
                     const isCopied = !!copiedStates[copyId];
@@ -367,7 +384,7 @@ export const DiscoveryDesktop: React.FC = () => {
               )}
 
               {networkTab === 'communities' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', overflowY: 'auto', flex: 1, minHeight: 0, paddingTop: '16px' }}>
                   {[
                     { name: 'Tech Career Africa', platform: 'Telegram', url: 'https://t.me/techcareerafrica', desc: 'Opportunities, referrals, and career tips for African tech professionals.' },
                     { name: `${selectedOpportunity.organization} Alumni Network`, platform: 'LinkedIn', url: `https://linkedin.com/company/${selectedOpportunity.organization.toLowerCase().replace(/\s/g,'-')}`, desc: 'Connect with former program participants and get insider tips.' },
@@ -414,14 +431,18 @@ export const DiscoveryDesktop: React.FC = () => {
             <div style={{ flex: 1 }}>
               <h1 className="hero-heading" style={{ marginBottom: '2px', fontSize: '28px' }}>{cat.label}</h1>
               <p style={{ fontSize: '13px', color: 'var(--text-secondary)', margin: 0 }}>
-                {isDiscovering ? 'AI is fetching live opportunities...' : `${filteredOpps.length} live results found`}
-                {userProfile?.location && <> in <strong>{userProfile.location}</strong></>}
+                {activeCategory === 'saves' 
+                  ? `${filteredOpps.length} bookmarked opportunities`
+                  : (isDiscovering ? 'AI is fetching live opportunities...' : `${filteredOpps.length} live results found`)}
+                {!isDiscovering && activeCategory !== 'saves' && userProfile?.location && <> in <strong>{userProfile.location}</strong></>}
               </p>
             </div>
-            <button onClick={handleReload} disabled={isDiscovering} className="btn-ghost"
-              style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <RefreshCw size={14} className={isDiscovering ? 'spin' : ''} /> {isDiscovering ? 'Searching...' : 'Reload'}
-            </button>
+            {activeCategory !== 'saves' && (
+              <button onClick={handleReload} disabled={isDiscovering} className="btn-ghost"
+                style={{ padding: '8px 16px', fontSize: '13px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <RefreshCw size={14} className={isDiscovering ? 'spin' : ''} /> {isDiscovering ? 'Searching...' : 'Reload'}
+              </button>
+            )}
           </div>
         </div>
 
@@ -465,7 +486,7 @@ export const DiscoveryDesktop: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {isDiscovering && filteredOpps.length === 0 ? (
+          {activeCategory !== 'saves' && isDiscovering && filteredOpps.length === 0 ? (
             <>
               {[1, 2, 3, 4, 5, 6].map((n) => (
                 <div key={n} className="skeleton-card">
@@ -501,6 +522,7 @@ export const DiscoveryDesktop: React.FC = () => {
           ) : filteredOpps.map(opp => {
             const isAnalyzed = !!analysisResults[opp.id];
             const analysis = analysisResults[opp.id];
+            const isSaved = savedOpportunities.some(o => o.id === opp.id);
             return (
               <div key={opp.id} className="card fade-in-up" style={{
                 padding: '20px 24px',
@@ -532,12 +554,11 @@ export const DiscoveryDesktop: React.FC = () => {
                   
                   <button 
                     onClick={() => handleSaveJob(opp)} 
-                    disabled={!!savedStates[opp.id]}
                     className="btn-ghost"
-                    style={{ padding: '8px 14px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-card)' }}
+                    style={{ padding: '8px 14px', fontSize: '12.5px', borderRadius: '10px', display: 'flex', alignItems: 'center', gap: '6px', border: '1px solid var(--border-card)', color: isSaved ? '#6366f1' : 'inherit' }}
                   >
-                    {savedStates[opp.id] ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
-                    {savedStates[opp.id] ? 'Saved' : 'Save'}
+                    {isSaved ? <BookmarkCheck size={14} /> : <Bookmark size={14} />}
+                    {isSaved ? 'Saved' : 'Save'}
                   </button>
 
                   {isAnalyzed ? (
@@ -570,7 +591,13 @@ export const DiscoveryDesktop: React.FC = () => {
           )}
         </div>
 
-        {filteredOpps.length > 0 && (
+        {!isDiscovering && activeCategory === 'saves' && filteredOpps.length === 0 && (
+          <div style={{ textAlign: 'center', padding: '48px 0', color: 'var(--text-muted)', fontSize: '13px' }}>
+            You haven't bookmarked any opportunities yet.
+          </div>
+        )}
+
+        {activeCategory !== 'saves' && filteredOpps.length > 0 && (
           <div style={{ marginTop: '32px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '16px' }}>
             {isDiscovering && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '10px', color: 'var(--text-secondary)', fontSize: '13px' }}>
@@ -615,7 +642,7 @@ export const DiscoveryDesktop: React.FC = () => {
       }}>
         {Object.entries(CATEGORIES).map(([key, cat]) => {
           const CatIcon = cat.icon;
-          const liveCount = liveResults[key]?.length;
+          const liveCount = key === 'saves' ? savedOpportunities.length : liveResults[key]?.length;
           return (
             <div key={key} onClick={() => handleCategoryClick(key)} className="card fade-in-up"
               style={{ padding: '28px 24px', cursor: 'pointer', display: 'flex', flexDirection: 'column',
@@ -636,7 +663,7 @@ export const DiscoveryDesktop: React.FC = () => {
                 </p>
               </div>
               <span style={{ fontSize: '11px', fontWeight: 600, color: 'var(--text-muted)', marginTop: 'auto' }}>
-                {liveCount !== undefined ? `${liveCount} live results` : 'Click to discover'}
+                {key === 'saves' ? `${liveCount} items saved` : (liveCount !== undefined ? `${liveCount} live results` : 'Click to discover')}
               </span>
             </div>
           );
